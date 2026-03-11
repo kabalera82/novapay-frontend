@@ -4,24 +4,46 @@ publish_to: 'none'
 version: 0.1.0+1
 
 environment:
-  sdk: ^3.10.0
+  sdk: '>=3.10.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
+  
+  # Base de Datos
   isar: ^3.1.0+1
   isar_flutter_libs: ^3.1.0+1
-  path_provider: ^2.0.0
+  
+  #Rutas del Suistema
+  path_provider: ^2.1.0
+  
+  # State Management
+  get: ^4.6.5
+
+  #Inyección de dependencias
+  get_it: ^7.6.0
+
+  # Utilidades y Helpers
+  equatable: ^2.0.0
+  dartz: ^0.10.0
+  intl: ^0.19.0
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+  # Testing
+  mockito: ^5.4.0
+
+  # Generadores de código
   build_runner: ^2.4.13
   isar_generator: ^3.1.0+1
 
 flutter:
   uses-material-design: true
+
   assets:
     - assets/images/novapay.webp
 
