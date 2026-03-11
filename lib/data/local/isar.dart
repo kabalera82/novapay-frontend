@@ -1,6 +1,6 @@
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import 'entities/user.dart';
+import '../../data/models/user.dart';
 
 Future<Isar> openIsar() async {
   if (Isar.instanceNames.isNotEmpty) {

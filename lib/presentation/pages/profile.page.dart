@@ -1,17 +1,21 @@
+// lib/presentation/pages/profile.page.dart
 import 'package:flutter/material.dart';
-import '../db/entities/user.dart';
-import '../db/isar.dart';
-import '../services/userServices.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-  static const String routename = 'home';
+import '../../data/local/isar.dart';
+import '../../data/models/user.dart';
+import '../../services/userServices.dart';
+import 'login.page.dart';
+
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
+  // profile.page.dart
+static const String routename = '/profile';
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _ProfilePageState extends State<ProfilePage> {
   late User _user;
   bool _initialized = false;
 
@@ -22,25 +26,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_initialized) {
-      // Intentamos obtener el usuario de los argumentos
-      final args = ModalRoute.of(context)!.settings.arguments;
+    if (_initialized) return;
 
-      if (args is User) {
-        _user = args;
-      } else {
-        // SI NO HAY ARGUMENTOS (como ahora), creamos un usuario temporal
-        // Esto evita que la app explote al iniciar directo en Home
-        _user = User() 
-          ..username = 'Marcos Admin'
-          ..email = 'admin@novapay.com'
-          ..phone = '123456789';
-      }
+    final args = ModalRoute.of(context)?.settings.arguments;
+    _user = args is User
+        ? args
+        : (User()
+          ..username = 'Usuario'
+          ..email = ''
+          ..phone = '');
 
-      _usernameCtrl.text = _user.username ?? '';
-      _phoneCtrl.text = _user.phone ?? '';
-      _initialized = true;
-    }
+    _usernameCtrl.text = _user.username ?? '';
+    _phoneCtrl.text = _user.phone ?? '';
+    _initialized = true;
   }
 
   @override
@@ -76,7 +74,8 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Cerrar sesión',
-            onPressed: () => Navigator.pushReplacementNamed(context, 'login'),
+            onPressed: () =>
+                Navigator.pushReplacementNamed(context, LoginPage.routename),
           ),
         ],
       ),
@@ -101,14 +100,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Text(
               _user.email ?? '',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.grey),
             ),
             const SizedBox(height: 32),
             const Divider(),
             const SizedBox(height: 16),
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text('Editar datos', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text('Editar datos',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 12),
             TextField(

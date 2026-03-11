@@ -1,6 +1,8 @@
+// lib/local/isar.service.dart
+// apertura y acceso a la base de datos local Isar
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import 'entities/user.dart';
+import '../../data/models/user.dart';
 
 class IsarService {
   late Future<Isar> db;

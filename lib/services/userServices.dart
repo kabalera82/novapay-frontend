@@ -1,5 +1,5 @@
 import 'package:isar/isar.dart';
-import '../db/entities/user.dart';
+import '../data/models/user.dart';
 
 // CREATE — registra un nuevo usuario
 Future<void> registerUser(Isar isar, String email, String password) async {

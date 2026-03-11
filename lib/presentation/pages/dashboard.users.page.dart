@@ -1,17 +1,21 @@
+// lib/presentation/pages/dashboard.users.page.dart
 import 'package:flutter/material.dart';
-import '../db/entities/user.dart';
-import '../db/isar.dart';
-import '../services/userServices.dart';
 
-class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
-  static const String routename = 'dashboard';
+import '../../data/local/isar.dart';
+import '../../data/models/user.dart';
+import '../../services/userServices.dart';
+import 'login.page.dart';
+
+class DashboardUsersPage extends StatefulWidget {
+  const DashboardUsersPage({super.key});
+  // dashboard.users.page.dart
+static const String routename = '/dashboard/users';
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  State<DashboardUsersPage> createState() => _DashboardUsersPageState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardUsersPageState extends State<DashboardUsersPage> {
   List<User> _users = [];
   bool _loading = true;
 
@@ -90,7 +94,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ..email = emailCtrl.text
                   ..password = passCtrl.text
                   ..role = selectedRole;
-                await isar.writeTxn(() async => await isar.users.put(user));
+                await isar.writeTxn(() async => isar.users.put(user));
                 if (mounted) Navigator.pop(ctx);
                 await _loadUsers();
               },
@@ -176,7 +180,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Cerrar sesión',
-            onPressed: () => Navigator.pushReplacementNamed(context, 'login'),
+            onPressed: () =>
+                Navigator.pushReplacementNamed(context, LoginPage.routename),
           ),
         ],
       ),
@@ -192,9 +197,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     final isAdmin = u.role == 'admin';
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: isAdmin ? Colors.indigo : Colors.teal,
+                        backgroundColor:
+                            isAdmin ? Colors.indigo : Colors.teal,
                         child: Icon(
-                          isAdmin ? Icons.admin_panel_settings : Icons.person,
+                          isAdmin
+                              ? Icons.admin_panel_settings
+                              : Icons.person,
                           color: Colors.white,
                         ),
                       ),
@@ -205,7 +213,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           Chip(
                             label: Text(isAdmin ? 'Admin' : 'Usuario'),
-                            backgroundColor: isAdmin ? Colors.indigo[100] : Colors.teal[100],
+                            backgroundColor: isAdmin
+                                ? Colors.indigo[100]
+                                : Colors.teal[100],
                           ),
                           IconButton(
                             icon: const Icon(Icons.edit),
