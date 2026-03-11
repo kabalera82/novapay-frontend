@@ -10,5 +10,6 @@ Future<Isar> openIsar() async {
   return await Isar.open(
     [UserSchema], // le dices qué tablas/colecciones existen
     directory: dir.path, // dónde guardar el archivo de la BD
+
   );
 }
