@@ -1,3 +1,4 @@
+// lib/data/models/config.dart
 import 'package:isar/isar.dart';
 
 part 'config.g.dart';

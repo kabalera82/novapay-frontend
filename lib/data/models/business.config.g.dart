@@ -1,8 +1,4 @@
-// GENERATED MANUAL FILE
-// See user.g.dart for pattern
-
-// ignore_for_file: non_constant_identifier_names, unnecessary_this
-
+// lib/data/models/business.config.g.dart
 
 part of 'business.config.dart';
 

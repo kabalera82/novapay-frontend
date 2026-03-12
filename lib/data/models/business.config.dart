@@ -1,3 +1,4 @@
+// lib/data/models/business.config.dart
 import 'package:isar/isar.dart';
 
 part 'business.config.g.dart';

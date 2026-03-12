@@ -1,3 +1,4 @@
+// lib/data/models/daily.report.dart
 import 'package:isar/isar.dart';
 
 part 'daily.report.g.dart';

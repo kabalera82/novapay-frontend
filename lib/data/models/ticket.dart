@@ -1,5 +1,6 @@
+// lib/data/models/ticket.dart
 import 'package:isar/isar.dart';
-import 'ticket_line.dart';
+import 'ticketLine.dart';
 
 part 'ticket.g.dart';
 
