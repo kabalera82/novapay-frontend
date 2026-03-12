@@ -16,6 +16,8 @@ void main() async {
   MediaKit.ensureInitialized();
   final isar = await openIsar();
   await seedAdmin(isar);
+  await seedProducts(isar);
+await seedBusinessConfig(isar);
   runApp(const MainApp());
 }
 
