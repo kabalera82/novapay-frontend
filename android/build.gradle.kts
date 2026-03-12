@@ -5,10 +5,7 @@ allprojects {
     }
 }
 
-val newBuildDir: Directory =
-    rootProject.layout.buildDirectory
-        .dir("../../build")
-        .get()
+val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
@@ -29,6 +26,18 @@ subprojects {
 // La evaluación de la app va DESPUÉS de nuestro parche
 subprojects {
     project.evaluationDependsOn(":app")
+}
+
+subprojects {
+    plugins.whenPluginAdded {
+        if (this is com.android.build.gradle.LibraryPlugin) {
+            extensions.getByType<com.android.build.gradle.LibraryExtension>().apply {
+                if (namespace == null) {
+                    namespace = project.group.toString()
+                }
+            }
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
