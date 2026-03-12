@@ -1,5 +1,6 @@
 // lib/data/models/product.dart
 import 'package:isar/isar.dart';
+import 'enums/tax.rate.enum.dart';
 
 part 'product.g.dart';
 
@@ -13,5 +14,5 @@ class Product {
   String? category;
   String? barcode;
   String? imagePath;
-  double taxRate = 0.21;
+  TaxRate taxRate = TaxRate.general;
 }
