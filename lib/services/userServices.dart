@@ -1,3 +1,4 @@
+// lib/services/userServices.dart
 import 'package:isar/isar.dart';
 import '../data/models/user.dart';
 
@@ -13,6 +14,7 @@ Future<void> registerUser(Isar isar, String email, String password) async {
 
 // READ — obtiene un usuario por id
 Future<User?> getUserById(Isar isar, int id) async {
+
   return await isar.users.get(id);
 }
 
