@@ -1,10 +1,9 @@
 // lib/presentation/controllers/config.controller.dart
-// lib/controllers/config.controller.dart
 import 'package:get/get.dart';
 import 'package:isar/isar.dart';
-import '../data/models/config.dart';
-import '../data/models/business.config.dart';
-import '../services/config.service.dart';
+import '../../data/models/config.dart';
+import '../../data/models/business.config.dart';
+import '../../services/config.service.dart';
 
 class ConfigController extends GetxController {
   final Isar isar;
@@ -37,7 +36,6 @@ class ConfigController extends GetxController {
     businessConfig.value = updated;
   }
 
-  // Helpers de lectura
   String get businessName => config.value?.businessName ?? '';
   String get businessMode => config.value?.businessMode ?? 'bar';
   String get legalName    => businessConfig.value?.businessName ?? '';
