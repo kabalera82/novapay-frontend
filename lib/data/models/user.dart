@@ -1,3 +1,4 @@
+// lib/data/models/user.dart
 import 'package:isar/isar.dart';
 
 part 'user.g.dart';
@@ -17,3 +18,4 @@ class User {
   // 'admin' o 'user'
   String role = 'user';
 }
+

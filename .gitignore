@@ -59,7 +59,7 @@ android/build/
 **/generated_plugin_registrant.cc
 **/generated_plugins.cmake
 
-
+/DOCS
 proyecto.md
 estructura.md
 commits.md
