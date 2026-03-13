@@ -106,6 +106,56 @@ Future<void> cancelTicket(Isar isar, Ticket ticket) async {
   });
 }
 
+// UPDATE — pagar líneas seleccionadas (pago parcial o total)
+// Si quedan líneas → ticket permanece abierto con las no pagadas.
+// Si no quedan líneas → ticket se marca como pagado.
+Future<void> paySelectedLines(
+  Isar isar,
+  Ticket ticket,
+  List<int> lineIndices,
+  PaymentMethod method,
+) async {
+  final remaining = <TicketLine>[];
+  for (int i = 0; i < ticket.lines.length; i++) {
+    if (!lineIndices.contains(i)) remaining.add(ticket.lines[i]);
+  }
+  ticket.lines       = remaining;
+  ticket.totalAmount = remaining.fold(0.0, (sum, l) => sum + l.totalLine);
+
+  if (remaining.isEmpty) {
+    ticket.status        = TicketStatus.pagado;
+    ticket.paymentMethod = method;
+    ticket.isParked      = false;
+  }
+
+  await isar.writeTxn(() async {
+    await isar.tickets.put(ticket);
+  });
+}
+
+// UPDATE — cambia la cantidad de una línea (+1 / -1). Si qty llega a 0 elimina la línea.
+Future<void> updateLineQuantity(
+  Isar isar,
+  Ticket ticket,
+  String productName,
+  int delta, // +1 o -1
+) async {
+  final lines = List<TicketLine>.from(ticket.lines);
+  final idx = lines.indexWhere((l) => l.productName == productName);
+  if (idx < 0) return;
+  lines[idx].quantity += delta;
+  if (lines[idx].quantity <= 0) {
+    lines.removeAt(idx);
+  } else {
+    lines[idx].totalLine = lines[idx].quantity * lines[idx].priceAtMoment;
+  }
+  ticket.lines = lines;
+  ticket.totalAmount = lines.fold(0.0, (sum, l) => sum + l.totalLine);
+  await isar.writeTxn(() async {
+    await isar.tickets.put(ticket);
+  });
+}
+
 // DELETE
 Future<void> deleteTicket(Isar isar, int id) async {
   await isar.writeTxn(() async {
