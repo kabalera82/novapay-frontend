@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../data/models/user.dart';
+import '../../../widgets/profile/profile.form.widget.dart';
 
 class PersonalAreaSection extends StatelessWidget {
   final User user;
@@ -10,6 +11,6 @@ class PersonalAreaSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Mi perfil — próximamente'));
+    return ProfileFormWidget(user: user);
   }
 }

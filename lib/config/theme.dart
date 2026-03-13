@@ -52,7 +52,7 @@ class AppTheme {
       ),
 
       // Fondo principal de la pantalla.
-      scaffoldBackgroundColor: background,
+      scaffoldBackgroundColor: const Color.fromARGB(255, 152, 152, 151),
 
       // Tema de la barra superior (AppBar).
       appBarTheme: AppBarTheme(
