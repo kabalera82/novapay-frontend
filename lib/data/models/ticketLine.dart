@@ -1,6 +1,8 @@
 // lib/data/models/ticketLine.dart
 import 'package:isar/isar.dart';
 
+part 'ticketLine.g.dart';
+
 @embedded
 class TicketLine {
   late String productName;
