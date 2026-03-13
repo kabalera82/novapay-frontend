@@ -12,7 +12,9 @@ class Ticket {
   Id id = Isar.autoIncrement;
   late String uuid;
   late DateTime createdAt;
+  @enumerated
   TicketStatus status = TicketStatus.abierto;
+  @enumerated
   PaymentMethod paymentMethod = PaymentMethod.efectivo;
   double totalAmount = 0;
   int? tableNumber;

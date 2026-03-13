@@ -1,4 +1,4 @@
-// lib/data/models/user.dart
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'user.dart';
 

@@ -14,5 +14,6 @@ class Product {
   String? category;
   String? barcode;
   String? imagePath;
+  @enumerated
   TaxRate taxRate = TaxRate.general;
 }
