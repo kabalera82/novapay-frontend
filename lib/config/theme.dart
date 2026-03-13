@@ -313,6 +313,23 @@ class AppTheme {
         ),
       ),
 
+      // Tema del NavigationRail.
+      navigationRailTheme: const NavigationRailThemeData(
+        backgroundColor: background,
+        selectedIconTheme: IconThemeData(color: primary),
+        selectedLabelTextStyle: TextStyle(
+          color: primary,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+        unselectedIconTheme: IconThemeData(color: textSecondary),
+        unselectedLabelTextStyle: TextStyle(
+          color: textSecondary,
+          fontSize: 12,
+        ),
+        indicatorColor: secondary,
+      ),
+
       // Tema de las hojas inferiores (Bottom Sheets).
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: background,
