@@ -177,12 +177,14 @@ class _AdminShellPageState extends State<AdminShellPage> {
           ),
           Expanded(
             child: Obx(
-              () => ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: _navItems.length,
-                itemBuilder: (_, i) {
-                  final selected = ctrl.selectedIndex.value == i;
-                  return ListTile(
+              () {
+                final currentIndex = ctrl.selectedIndex.value;
+                return ListView.builder(
+                  padding: EdgeInsets.zero,
+                  itemCount: _navItems.length,
+                  itemBuilder: (_, i) {
+                    final selected = currentIndex == i;
+                    return ListTile(
                     leading: Icon(
                       _navItems[i].icon,
                       color: selected ? Theme.of(context).colorScheme.primary : null,
@@ -203,7 +205,8 @@ class _AdminShellPageState extends State<AdminShellPage> {
                     },
                   );
                 },
-              ),
+                );
+              },
             ),
           ),
         ],
