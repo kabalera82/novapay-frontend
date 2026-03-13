@@ -25,7 +25,7 @@ const _TaxRateValueEnumMap = {
 
 const ProductSchema = CollectionSchema(
   name: r'Product',
-  id: 9876543210987654321,
+  id: 3456789012345678901,
   properties: {
     r'barcode': PropertySchema(
       id: 0,
