@@ -1,6 +1,7 @@
 // lib/services/ticket.service.dart
 import 'package:isar/isar.dart';
 import 'package:uuid/uuid.dart';
+import '../data/models/product.dart';
 import '../data/models/ticket.dart';
 import '../data/models/ticketLine.dart';
 
@@ -109,15 +110,21 @@ Future<void> cancelTicket(Isar isar, Ticket ticket) async {
 // UPDATE — pagar líneas seleccionadas (pago parcial o total)
 // Si quedan líneas → ticket permanece abierto con las no pagadas.
 // Si no quedan líneas → ticket se marca como pagado.
+// Descuenta stock de los productos pagados.
 Future<void> paySelectedLines(
   Isar isar,
   Ticket ticket,
   List<int> lineIndices,
   PaymentMethod method,
 ) async {
-  final remaining = <TicketLine>[];
+  final paidLines   = <TicketLine>[];
+  final remaining   = <TicketLine>[];
   for (int i = 0; i < ticket.lines.length; i++) {
-    if (!lineIndices.contains(i)) remaining.add(ticket.lines[i]);
+    if (lineIndices.contains(i)) {
+      paidLines.add(ticket.lines[i]);
+    } else {
+      remaining.add(ticket.lines[i]);
+    }
   }
   ticket.lines       = remaining;
   ticket.totalAmount = remaining.fold(0.0, (sum, l) => sum + l.totalLine);
@@ -128,8 +135,19 @@ Future<void> paySelectedLines(
     ticket.isParked      = false;
   }
 
+  // Descontar stock de los productos vendidos
+  final allProducts = await isar.products.where().findAll();
   await isar.writeTxn(() async {
     await isar.tickets.put(ticket);
+    for (final line in paidLines) {
+      final product = allProducts
+          .where((p) => p.name == line.productName)
+          .firstOrNull;
+      if (product != null) {
+        product.stock = (product.stock - line.quantity).clamp(0, 999999);
+        await isar.products.put(product);
+      }
+    }
   });
 }
 
@@ -154,6 +172,20 @@ Future<void> updateLineQuantity(
   await isar.writeTxn(() async {
     await isar.tickets.put(ticket);
   });
+}
+
+// UPDATE — reabre un ticket pagado o cancelado
+Future<void> reopenTicket(Isar isar, Ticket ticket) async {
+  ticket.status   = TicketStatus.abierto;
+  ticket.isParked = false;
+  await isar.writeTxn(() async {
+    await isar.tickets.put(ticket);
+  });
+}
+
+// READ — todos los tickets sin filtro
+Future<List<Ticket>> getAllTickets(Isar isar) async {
+  return await isar.tickets.where().findAll();
 }
 
 // DELETE
