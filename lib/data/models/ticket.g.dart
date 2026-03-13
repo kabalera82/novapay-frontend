@@ -185,7 +185,7 @@ void _ticketSerialize(
   );
   writer.writeByte(offsets[3], object.paymentMethod.index);
   writer.writeByte(offsets[4], object.status.index);
-  writer.writeLong(offsets[5], object.tableNumber);
+  writer.writeLong(offsets[5], object.tableNumber ?? 0);
   writer.writeString(offsets[6], object.tableOrLabel);
   writer.writeDouble(offsets[7], object.totalAmount);
   writer.writeString(offsets[8], object.uuid);

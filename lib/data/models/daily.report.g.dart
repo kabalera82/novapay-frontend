@@ -17,6 +17,7 @@ const DailyReportSchema = CollectionSchema(
     r'totalCash': PropertySchema(id: 5, name: r'totalCash', type: IsarType.double),
     r'totalExpenses': PropertySchema(id: 6, name: r'totalExpenses', type: IsarType.double),
   },
+  
   estimateSize: _dailyReportEstimateSize,
   serialize: _dailyReportSerialize,
   deserialize: _dailyReportDeserialize,
