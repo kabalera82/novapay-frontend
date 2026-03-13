@@ -90,6 +90,27 @@ class TicketController extends GetxController {
     await loadTickets();
   }
 
+  // Paga las líneas seleccionadas (índices).
+  // Si quedan líneas el ticket permanece abierto; si no, se cierra.
+  Future<void> payLines(List<int> lineIndices, PaymentMethod method) async {
+    if (activeTicket.value == null) return;
+    await paySelectedLines(isar, activeTicket.value!, lineIndices, method);
+    final updated = await getTicketById(isar, activeTicket.value!.id);
+    if (updated == null || updated.status == TicketStatus.pagado) {
+      activeTicket.value = null;
+    } else {
+      activeTicket.value = updated;
+    }
+    await loadTickets();
+  }
+
+  Future<void> changeLineQuantity(String productName, int delta) async {
+    if (activeTicket.value == null) return;
+    await updateLineQuantity(isar, activeTicket.value!, productName, delta);
+    activeTicket.value = await getTicketById(isar, activeTicket.value!.id);
+    await loadTickets();
+  }
+
   void clearActive() => activeTicket.value = null;
 
   Future<List<Ticket>> todayTickets() async {

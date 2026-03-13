@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../config/theme.dart';
 import '../../../data/models/user.dart';
 import '../../controllers/admin.shell.controller.dart';
 import '../login.page.dart';
@@ -134,13 +135,13 @@ class _AdminShellPageState extends State<AdminShellPage> {
       child: Column(
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
+            decoration: const BoxDecoration(color: AppTheme.textPrimary),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: Colors.white24,
+                  backgroundColor: AppTheme.secondary,
                   child: Text(
                     displayName[0].toUpperCase(),
                     style: const TextStyle(
