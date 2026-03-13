@@ -33,7 +33,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'Novapay TPV',
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.lightModernTheme,
       initialBinding: AppBindings(isar),
       home: const SplashPage(),
       routes: {

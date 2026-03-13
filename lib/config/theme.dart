@@ -1,344 +1,276 @@
 // lib/config/theme.dart
-// configuración visual global
+// configuración visual global — NovaPay Premium Modern Light
 import 'package:flutter/material.dart';
 
 class AppTheme {
+  // ── Paleta de Colores ─────────────────────────────────────────────────────
 
-  // COLORES
-  // Primary - Acciones principales.
-  static const Color primary = Color(0xFF6C5CE7);
+  /// Morado real intenso (Acciones principales e inicio de degradados).
+  static const Color primary = Color(0xFF6D28D9);
 
-  // Secondary - Estados activos.
-  static const Color secondary = Color(0xFFA29BFE);
+  /// Rosa fucsia vibrante (Final de degradados y acentos).
+  static const Color secondary = Color(0xFFEC4899);
 
-  // Background - Fondo de la app.
-  static const Color background = Color.fromARGB(255, 252, 253, 188);
+  /// Background - Tono plata (gris azulado claro) para aspecto premium.
+  static const Color background = Color(0xFFE2E8F0);
 
-  // Surface - Tarjetas y modales.
-  static const Color surface = Color.fromARGB(255, 201, 201, 201);
+  /// Surface - Blanco puro para tarjetas e inputs.
+  static const Color surface = Color(0xFFFFFFFF);
 
-  // Error - Estados de error.
-  static const Color error = Color(0xFFE74C3C);
+  /// Texto principal: Pizarra muy oscuro.
+  static const Color textPrimary = Color(0xFF0F172A);
 
-  // Success - Estados de éxito.
-  static const Color success = Color(0xFF27AE60);
+  /// Texto secundario: Gris medio.
+  static const Color textSecondary = Color(0xFF64748B);
 
-  // Warning - Estados de advertencia.
-  static const Color warning = Color(0xFFF39C12);
+  /// Bordes y divisores sutiles.
+  static const Color border = Color(0xFFCBD5E1);
 
-  // Info - Estados de información.
-  static const Color info = Color(0xFF3498DB);
+  // Estados
+  static const Color error   = Color(0xFFEF4444);
+  static const Color success = Color(0xFF10B981);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color info    = Color(0xFF0EA5E9);
 
-  // Text Primary - Texto principal.
-  static const Color textPrimary = Color(0xFF2D3436);
+  // ── Tema ──────────────────────────────────────────────────────────────────
 
-  // Text Secondary - Texto secundario.
-  static const Color textSecondary = Color(0xFF636E72);
-
-  // TEMA DE LA APLICACIÓN - Material Design 3  
-  static ThemeData get lightTheme {
+  static ThemeData get lightModernTheme {
     return ThemeData(
       useMaterial3: true,
-      
-      // Esquema de colores.
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primary,
-        brightness: Brightness.light,
-        primary: primary,
-        secondary: secondary,
-        error: error,
-        surface: surface,
-        background: background,
+      brightness: Brightness.light,
+
+      colorScheme: const ColorScheme.light(
+        primary:     primary,
+        secondary:   secondary,
+        error:       error,
+        surface:     surface,
+        onPrimary:   Colors.white,
+        onSecondary: Colors.white,
+        onError:     Colors.white,
+        onSurface:   textPrimary,
+        outline:     border,
       ),
 
-      // Fondo principal de la pantalla.
-      scaffoldBackgroundColor: const Color.fromARGB(255, 152, 152, 151),
+      scaffoldBackgroundColor: background,
 
-      // Tema de la barra superior (AppBar).
-      appBarTheme: AppBarTheme(
-        elevation: 0,
-        centerTitle: false,
+      appBarTheme: const AppBarTheme(
+        elevation:       0,
+        centerTitle:     false,
         backgroundColor: background,
         foregroundColor: textPrimary,
-        titleTextStyle: const TextStyle(
-          color: textPrimary,
-          fontSize: 20,
+        titleTextStyle: TextStyle(
+          color:      textPrimary,
+          fontSize:   20,
           fontWeight: FontWeight.bold,
         ),
       ),
 
-      // Tema de la tipografía.
-      textTheme: TextTheme(
-        // Encabezado grande.
-        displayLarge: const TextStyle(
-          color: textPrimary,
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-        ),
-
-        // Encabezado mediano.
-        displayMedium: const TextStyle(
-          color: textPrimary,
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-        ),
-
-        // Encabezado pequeño.
-        displaySmall: const TextStyle(
-          color: textPrimary,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-
-        // Título grande.
-        headlineLarge: const TextStyle(
-          color: textPrimary,
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-        ),
-
-        // Título mediano.
-        headlineMedium: const TextStyle(
-          color: textPrimary,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-
-        // Título pequeño.
-        headlineSmall: const TextStyle(
-          color: textPrimary,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-
-        // Texto base grande.
-        bodyLarge: const TextStyle(
-          color: textPrimary,
-          fontSize: 16,
-          fontWeight: FontWeight.normal,
-        ),
-
-        // Texto base mediano.
-        bodyMedium: const TextStyle(
-          color: textPrimary,
-          fontSize: 14,
-          fontWeight: FontWeight.normal,
-        ),
-
-        // Texto base pequeño.
-        bodySmall: const TextStyle(
-          color: textSecondary,
-          fontSize: 12,
-          fontWeight: FontWeight.normal,
-        ),
-
-        // Etiqueta grande.
-        labelLarge: const TextStyle(
-          color: textPrimary,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-
-        // Etiqueta mediana.
-        labelMedium: const TextStyle(
-          color: textPrimary,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-
-        // Etiqueta pequeña.
-        labelSmall: const TextStyle(
-          color: textSecondary,
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-        ),
+      textTheme: const TextTheme(
+        displayLarge:   TextStyle(color: textPrimary,   fontSize: 32, fontWeight: FontWeight.bold),
+        displayMedium:  TextStyle(color: textPrimary,   fontSize: 28, fontWeight: FontWeight.bold),
+        displaySmall:   TextStyle(color: textPrimary,   fontSize: 24, fontWeight: FontWeight.bold),
+        headlineLarge:  TextStyle(color: textPrimary,   fontSize: 22, fontWeight: FontWeight.w600),
+        headlineMedium: TextStyle(color: textPrimary,   fontSize: 18, fontWeight: FontWeight.w600),
+        headlineSmall:  TextStyle(color: textPrimary,   fontSize: 16, fontWeight: FontWeight.w600),
+        bodyLarge:      TextStyle(color: textPrimary,   fontSize: 16, fontWeight: FontWeight.normal),
+        bodyMedium:     TextStyle(color: textPrimary,   fontSize: 14, fontWeight: FontWeight.normal),
+        bodySmall:      TextStyle(color: textSecondary, fontSize: 12, fontWeight: FontWeight.normal),
+        labelLarge:     TextStyle(color: textPrimary,   fontSize: 14, fontWeight: FontWeight.w500),
+        labelMedium:    TextStyle(color: textPrimary,   fontSize: 12, fontWeight: FontWeight.w500),
+        labelSmall:     TextStyle(color: textSecondary, fontSize: 11, fontWeight: FontWeight.w500),
       ),
 
-      // Tema de botones elevados.
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primary,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 12,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
 
-      // Tema de botones con contorno.
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primary,
           side: const BorderSide(color: primary),
           elevation: 0,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 12,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
 
-      // Tema de botones de texto.
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primary,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
 
-      // Tema de los campos de texto (Inputs).
       inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: surface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
-        ),
+        filled:         true,
+        fillColor:      surface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: surface),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: surface),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: primary,
-            width: 2,
-          ),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: error,
-            width: 2,
-          ),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: error, width: 2),
         ),
-        hintStyle: const TextStyle(
-          color: textSecondary,
-          fontSize: 14,
-        ),
-        labelStyle: const TextStyle(
-          color: textPrimary,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-        errorStyle: const TextStyle(
-          color: error,
-          fontSize: 12,
-        ),
+        hintStyle:  const TextStyle(color: textSecondary, fontSize: 14),
+        labelStyle: const TextStyle(color: textPrimary,   fontSize: 14, fontWeight: FontWeight.w500),
+        errorStyle: const TextStyle(color: error,         fontSize: 12),
       ),
 
-      // Tema de las tarjetas.
       cardTheme: CardThemeData(
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        color: background,
-      ),
-
-      // Tema de las etiquetas (Chips).
-      chipTheme: ChipThemeData(
-        backgroundColor: surface,
-        selectedColor: secondary,
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 8,
-        ),
-        labelStyle: const TextStyle(
-          fontSize: 12,
-          color: textPrimary,
-        ),
-        brightness: Brightness.light,
+        color: surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0x0D000000), width: 1),
         ),
       ),
 
-      // Tema del botón flotante (FAB).
+      chipTheme: ChipThemeData(
+        backgroundColor: surface,
+        selectedColor:   const Color(0x336D28D9), // primary ~20%
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        labelStyle: const TextStyle(fontSize: 12, color: textPrimary, fontWeight: FontWeight.w600),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        side: const BorderSide(color: border),
+      ),
+
+      navigationRailTheme: const NavigationRailThemeData(
+        backgroundColor:          textPrimary,
+        indicatorColor:           primary,
+        selectedIconTheme:        IconThemeData(color: Colors.white, size: 28),
+        unselectedIconTheme:      IconThemeData(color: textSecondary),
+        selectedLabelTextStyle:   TextStyle(color: Colors.white,    fontWeight: FontWeight.bold),
+        unselectedLabelTextStyle: TextStyle(color: textSecondary),
+      ),
+
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primary,
         foregroundColor: Colors.white,
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
 
-      // Tema de las ventanas emergentes (Diálogos).
       dialogTheme: DialogThemeData(
-        backgroundColor: background,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        elevation: 2,
+        backgroundColor: surface,
+        elevation: 10,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titleTextStyle: const TextStyle(
-          color: textPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
+          color: textPrimary, fontSize: 20, fontWeight: FontWeight.bold,
         ),
-        contentTextStyle: const TextStyle(
-          color: textPrimary,
-          fontSize: 14,
-        ),
+        contentTextStyle: const TextStyle(color: textPrimary, fontSize: 14),
       ),
 
-      // Tema del NavigationRail.
-      navigationRailTheme: const NavigationRailThemeData(
-        backgroundColor: background,
-        selectedIconTheme: IconThemeData(color: primary),
-        selectedLabelTextStyle: TextStyle(
-          color: primary,
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
-        ),
-        unselectedIconTheme: IconThemeData(color: textSecondary),
-        unselectedLabelTextStyle: TextStyle(
-          color: textSecondary,
-          fontSize: 12,
-        ),
-        indicatorColor: secondary,
-      ),
-
-      // Tema de las hojas inferiores (Bottom Sheets).
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: background,
+        backgroundColor: surface,
+        elevation: 10,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(16),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+
+      dividerTheme: const DividerThemeData(
+        color:     border,
+        thickness: 1,
+        space:     24,
+      ),
+    );
+  }
+}
+
+// ── GradientButton ────────────────────────────────────────────────────────────
+
+class GradientButton extends StatelessWidget {
+  final String       text;
+  final VoidCallback onPressed;
+  final double       height;
+  final double?      width;
+  final IconData?    icon;
+
+  const GradientButton({
+    super.key,
+    required this.text,
+    required this.onPressed,
+    this.height = 56,
+    this.width,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width:  width,
+      height: height,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppTheme.primary, AppTheme.secondary],
+          begin:  Alignment.centerLeft,
+          end:    Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color:      AppTheme.primary.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset:     const Offset(0, 4),
+          ),
+          BoxShadow(
+            color:      AppTheme.secondary.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset:     const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisSize:      MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, color: Colors.white, size: 22),
+                  const SizedBox(width: 10),
+                ],
+                Text(
+                  text,
+                  style: const TextStyle(
+                    color:         Colors.white,
+                    fontSize:      16,
+                    fontWeight:    FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        elevation: 2,
       ),
     );
   }
