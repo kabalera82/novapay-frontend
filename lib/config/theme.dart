@@ -52,7 +52,7 @@ class AppTheme {
       ),
 
       // Fondo principal de la pantalla.
-      scaffoldBackgroundColor: background,
+      scaffoldBackgroundColor: const Color.fromARGB(255, 152, 152, 151),
 
       // Tema de la barra superior (AppBar).
       appBarTheme: AppBarTheme(
@@ -311,6 +311,23 @@ class AppTheme {
           color: textPrimary,
           fontSize: 14,
         ),
+      ),
+
+      // Tema del NavigationRail.
+      navigationRailTheme: const NavigationRailThemeData(
+        backgroundColor: background,
+        selectedIconTheme: IconThemeData(color: primary),
+        selectedLabelTextStyle: TextStyle(
+          color: primary,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+        unselectedIconTheme: IconThemeData(color: textSecondary),
+        unselectedLabelTextStyle: TextStyle(
+          color: textSecondary,
+          fontSize: 12,
+        ),
+        indicatorColor: secondary,
       ),
 
       // Tema de las hojas inferiores (Bottom Sheets).

@@ -3,9 +3,8 @@
 import 'package:flutter/material.dart';
 
 import '../../data/local/isar.dart';
-import '../../data/models/user.dart';
 import '../../services/userServices.dart';
-import 'dashboard.users.page.dart';
+import 'admin/admin.shell.page.dart';
 import 'profile.page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -41,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     if (user.role == 'admin') {
-      Navigator.pushReplacementNamed(context, DashboardUsersPage.routename);
+      Navigator.pushReplacementNamed(context, AdminShellPage.routename, arguments: user);
     } else {
       Navigator.pushReplacementNamed(context, ProfilePage.routename, arguments: user);
     }
