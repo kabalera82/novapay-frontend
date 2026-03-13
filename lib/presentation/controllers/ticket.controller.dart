@@ -116,4 +116,28 @@ class TicketController extends GetxController {
   Future<List<Ticket>> todayTickets() async {
     return await getTicketsByDate(isar, DateTime.now());
   }
+
+  // ── Gestión histórica de tickets ─────────────────────────────────────────
+
+  final allTickets = <Ticket>[].obs;
+
+  Future<void> loadAllTickets() async {
+    allTickets.value = await getAllTickets(isar);
+  }
+
+  Future<void> reopenTicketById(Ticket ticket) async {
+    await reopenTicket(isar, ticket);
+    await Future.wait([loadTickets(), loadAllTickets()]);
+  }
+
+  Future<void> deleteTicketById(int id) async {
+    await deleteTicket(isar, id);
+    await Future.wait([loadTickets(), loadAllTickets()]);
+  }
+
+  Future<void> changePaymentMethod(Ticket ticket, PaymentMethod method) async {
+    ticket.paymentMethod = method;
+    await isar.writeTxn(() async => await isar.tickets.put(ticket));
+    await loadAllTickets();
+  }
 }
