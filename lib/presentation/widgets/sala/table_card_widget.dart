@@ -22,18 +22,23 @@ class TableCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme      = Theme.of(context);
     final isOccupied = ticket != null;
+    final isParked   = ticket?.isParked ?? false;
 
     final bgColor = isSelected
         ? theme.colorScheme.primaryContainer
-        : isOccupied
-            ? theme.colorScheme.primary
-            : theme.colorScheme.surfaceContainerHighest;
+        : isParked
+            ? const Color(0xFFFEF3C7)   // ámbar claro — aparcada
+            : isOccupied
+                ? theme.colorScheme.primary
+                : theme.colorScheme.surfaceContainerHighest;
 
     final fgColor = isSelected
         ? theme.colorScheme.onPrimaryContainer
-        : isOccupied
-            ? theme.colorScheme.onPrimary
-            : theme.colorScheme.onSurfaceVariant;
+        : isParked
+            ? const Color(0xFF92400E)   // ámbar oscuro — texto sobre fondo ámbar
+            : isOccupied
+                ? theme.colorScheme.onPrimary
+                : theme.colorScheme.onSurfaceVariant;
 
     return GestureDetector(
       onTap: onTap,
@@ -71,6 +76,15 @@ class TableCardWidget extends StatelessWidget {
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
+              if (isParked)
+                Text(
+                  'Aparcada',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: fgColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
             ] else
               Text(
                 'Libre',

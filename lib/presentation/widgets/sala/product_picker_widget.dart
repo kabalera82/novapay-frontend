@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../config/app_formats.dart';
 import '../../../data/models/product.dart';
 import '../../controllers/product_controller.dart';
 
@@ -204,7 +205,7 @@ class _ProductRow extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              '${product.price.toStringAsFixed(2)} €',
+              AppFormats.currency.format(product.price),
               style: theme.textTheme.bodyLarge?.copyWith(
                 color:      theme.colorScheme.primary,
                 fontWeight: FontWeight.bold,

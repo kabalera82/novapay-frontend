@@ -41,15 +41,23 @@ class AppTheme {
       brightness: Brightness.light,
 
       colorScheme: const ColorScheme.light(
-        primary:     primary,
-        secondary:   secondary,
-        error:       error,
-        surface:     surface,
-        onPrimary:   Colors.white,
-        onSecondary: Colors.white,
-        onError:     Colors.white,
-        onSurface:   textPrimary,
-        outline:     border,
+        primary:                  primary,
+        secondary:                secondary,
+        error:                    error,
+        surface:                  surface,
+        onPrimary:                Colors.white,
+        onSecondary:              Colors.white,
+        onError:                  Colors.white,
+        onSurface:                textPrimary,
+        outline:                  border,
+        // Variantes M3 explícitas — evita colores auto-derivados inesperados
+        primaryContainer:         Color(0xFFEDE9FE),   // lila muy claro
+        onPrimaryContainer:       Color(0xFF3B0764),   // morado muy oscuro
+        secondaryContainer:       Color(0xFFFCE7F3),   // rosa muy claro
+        onSecondaryContainer:     Color(0xFF831843),   // rosa muy oscuro
+        surfaceContainerHighest:  Color(0xFFF1F5F9),   // gris azulado muy claro
+        surfaceContainerHigh:     Color(0xFFE9EFF6),
+        surfaceContainer:         Color(0xFFF8FAFC),
       ),
 
       scaffoldBackgroundColor: background,
@@ -162,9 +170,10 @@ class AppTheme {
         backgroundColor:          textPrimary,
         indicatorColor:           primary,
         selectedIconTheme:        IconThemeData(color: Colors.white, size: 28),
-        unselectedIconTheme:      IconThemeData(color: textSecondary),
-        selectedLabelTextStyle:   TextStyle(color: Colors.white,    fontWeight: FontWeight.bold),
-        unselectedLabelTextStyle: TextStyle(color: textSecondary),
+        // Color(0xFFCBD5E1) = slate-300: ratio ~5.8:1 sobre #0F172A → pasa WCAG AA
+        unselectedIconTheme:      IconThemeData(color: Color(0xFFCBD5E1)),
+        selectedLabelTextStyle:   TextStyle(color: Colors.white,         fontWeight: FontWeight.bold),
+        unselectedLabelTextStyle: TextStyle(color: Color(0xFFCBD5E1)),
       ),
 
       floatingActionButtonTheme: FloatingActionButtonThemeData(

@@ -1,5 +1,6 @@
 // lib/presentation/widgets/inventario/product_tile.dart
 import 'package:flutter/material.dart';
+import '../../../config/app_formats.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/enums/tax_rate_enum.dart';
 import '../../../data/models/product.dart';
@@ -64,7 +65,7 @@ class ProductTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${product.price.toStringAsFixed(2)} €',
+                AppFormats.currency.format(product.price),
                 style: theme.textTheme.labelLarge
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),

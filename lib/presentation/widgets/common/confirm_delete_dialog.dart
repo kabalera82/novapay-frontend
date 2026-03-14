@@ -11,19 +11,19 @@ abstract class ConfirmDeleteDialog {
   }) async {
     return await showDialog<bool>(
           context: context,
-          builder: (_) => AlertDialog(
+          builder: (dialogCtx) => AlertDialog(
             title: Text(title),
             content: Text(message),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context, false),
+                onPressed: () => Navigator.pop(dialogCtx, false),
                 child: const Text('Cancelar'),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.error,
                 ),
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () => Navigator.pop(dialogCtx, true),
                 child: const Text('Eliminar'),
               ),
             ],

@@ -34,7 +34,7 @@ class UserFormDialog {
   ) {
     final isEdit       = existing != null;
     final emailCtrl    = TextEditingController(text: existing?.email    ?? '');
-    final passCtrl     = TextEditingController(text: existing?.password ?? '');
+    final passCtrl     = TextEditingController();   // nunca pre-rellenar: evita rehashar el hash
     final usernameCtrl = TextEditingController(text: existing?.username ?? '');
     String selectedRole = existing?.role ?? 'user';
 
@@ -58,7 +58,9 @@ class UserFormDialog {
               TextField(
                 controller: passCtrl,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'Contraseña'),
+                decoration: InputDecoration(
+                  labelText: isEdit ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña',
+                ),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
@@ -79,13 +81,17 @@ class UserFormDialog {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (emailCtrl.text.isEmpty || passCtrl.text.isEmpty) return;
+                if (emailCtrl.text.isEmpty) return;
+                if (!isEdit && passCtrl.text.isEmpty) return;
                 if (isEdit) {
                   existing
                     ..username = usernameCtrl.text
                     ..email    = emailCtrl.text
-                    ..password = passCtrl.text
                     ..role     = selectedRole;
+                  // solo actualizar contraseña si el campo tiene contenido
+                  if (passCtrl.text.isNotEmpty) {
+                    existing.password = passCtrl.text;
+                  }
                   await userCtrl.save(existing);
                 } else {
                   final user = User()
