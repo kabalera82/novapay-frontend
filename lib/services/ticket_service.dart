@@ -125,13 +125,17 @@ class TicketService {
         remaining.add(ticket.lines[i]);
       }
     }
-    ticket.lines = remaining;
-    ticket.totalAmount = remaining.fold(0.0, (sum, l) => sum + l.totalLine);
 
     if (remaining.isEmpty) {
-      ticket.status = TicketStatus.pagado;
+      // Fully paid — keep lines intact for history, just change status
+      ticket.status        = TicketStatus.pagado;
       ticket.paymentMethod = method;
-      ticket.isParked = false;
+      ticket.isParked      = false;
+      // ticket.lines and ticket.totalAmount stay as-is (full history preserved)
+    } else {
+      // Partial payment — remove paid lines, keep the rest
+      ticket.lines       = remaining;
+      ticket.totalAmount = remaining.fold(0.0, (sum, l) => sum + l.totalLine);
     }
 
     final allProducts = await _isar.products.where().findAll();
@@ -185,6 +189,29 @@ class TicketService {
 
   Future<void> updatePaymentMethod(Ticket ticket, PaymentMethod method) async {
     ticket.paymentMethod = method;
+    await _isar.writeTxn(() async {
+      await _isar.tickets.put(ticket);
+    });
+  }
+
+  /// Corrige un ticket ya cerrado (pagado/cancelado).
+  /// Mantiene únicamente las líneas seleccionadas como las lineas finales cobradas,
+  /// recalcula el totalAmount y cierra el ticket como [pagado].
+  /// NO descuenta stock (ya fue descontado en el cobro original).
+  Future<void> correctPayment(
+    Ticket ticket,
+    List<int> lineIndices,
+    PaymentMethod method,
+  ) async {
+    final finalLines = [
+      for (int i = 0; i < ticket.lines.length; i++)
+        if (lineIndices.contains(i)) ticket.lines[i],
+    ];
+    ticket.lines        = finalLines;
+    ticket.totalAmount  = finalLines.fold(0.0, (sum, l) => sum + l.totalLine);
+    ticket.status       = TicketStatus.pagado;
+    ticket.paymentMethod = method;
+    ticket.isParked     = false;
     await _isar.writeTxn(() async {
       await _isar.tickets.put(ticket);
     });

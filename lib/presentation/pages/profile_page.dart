@@ -3,12 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../data/models/user.dart';
+import '../../config/app_routes.dart';
 import '../widgets/profile/profile_form_widget.dart';
-import 'login_page.dart';
 
 class ProfilePage extends StatelessWidget {
-  static const String routename = '/profile';
-
   const ProfilePage({super.key});
 
   @override
@@ -23,7 +21,7 @@ class ProfilePage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Cerrar sesión',
-            onPressed: () => Get.offNamed(LoginPage.routename),
+            onPressed: () => Get.offNamed(AppRoutes.login),
           ),
         ],
       ),

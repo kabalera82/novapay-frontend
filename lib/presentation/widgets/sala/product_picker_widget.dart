@@ -158,7 +158,7 @@ class _CategoryButton extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: theme.textTheme.labelMedium?.copyWith(
+          style: theme.textTheme.bodySmall?.copyWith(
             color: selected
                 ? theme.colorScheme.onPrimaryContainer
                 : theme.colorScheme.onSurfaceVariant,
@@ -195,7 +195,7 @@ class _ProductRow extends StatelessWidget {
             Expanded(
               child: Text(
                 product.name,
-                style: theme.textTheme.bodyMedium?.copyWith(
+                style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
                 maxLines: 2,
@@ -205,7 +205,7 @@ class _ProductRow extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               '${product.price.toStringAsFixed(2)} €',
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: theme.textTheme.bodyLarge?.copyWith(
                 color:      theme.colorScheme.primary,
                 fontWeight: FontWeight.bold,
               ),

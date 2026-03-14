@@ -11,20 +11,16 @@ class ExpenseService {
   Future<Expense> create(Expense expense) async {
     await _isar.writeTxn(() async {
       await _isar.expenses.put(expense);
-    });
-
-    if (expense.category == ExpenseCategory.compras &&
-        expense.productId > 0 &&
-        expense.quantity > 0) {
-      await _isar.writeTxn(() async {
+      if (expense.category == ExpenseCategory.compras &&
+          expense.productId > 0 &&
+          expense.quantity > 0) {
         final product = await _isar.products.get(expense.productId);
         if (product != null) {
           product.stock += expense.quantity;
           await _isar.products.put(product);
         }
-      });
-    }
-
+      }
+    });
     return expense;
   }
 

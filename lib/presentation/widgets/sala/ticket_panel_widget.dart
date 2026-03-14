@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../config/app_formats.dart';
 import '../../../data/models/product.dart';
 import '../../../data/models/ticket_line.dart';
 import '../../controllers/ticket_controller.dart';
@@ -27,7 +28,7 @@ class TicketPanelWidget extends StatefulWidget {
 
 class _TicketPanelWidgetState extends State<TicketPanelWidget> {
   final _ticketCtrl   = Get.find<TicketController>();
-  final _fmt          = NumberFormat.currency(locale: 'es_ES', symbol: '€');
+  final _fmt          = AppFormats.currency;
   bool  _showingPicker = false;
 
   // ── Añadir producto al ticket ─────────────────────────────────────────────
@@ -176,7 +177,7 @@ class _TicketPanelWidgetState extends State<TicketPanelWidget> {
         // ── Selector de productos (toggle inline) ─────────────────────────
         if (_showingPicker)
           SizedBox(
-            height: 300,
+            height: 240,
             child: Column(
               children: [
                 const Divider(height: 1),

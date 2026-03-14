@@ -1,8 +1,8 @@
 // lib/presentation/pages/admin/sections/caja_section.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
+import '../../../../config/app_formats.dart';
 import '../../../../config/theme.dart';
 import '../../../controllers/expense_controller.dart';
 import '../../../controllers/product_controller.dart';
@@ -13,6 +13,7 @@ import '../../../widgets/caja/expense_row.dart';
 import '../../../widgets/caja/report_row.dart';
 import '../../../widgets/caja/summary_card.dart';
 import '../../../widgets/caja/top_products_card.dart';
+import '../../../widgets/common/section_header.dart';
 
 class CajaSection extends StatefulWidget {
   const CajaSection({super.key});
@@ -25,33 +26,22 @@ class _CajaSectionState extends State<CajaSection> {
   final _reportCtrl  = Get.find<ReportController>();
   final _expenseCtrl = Get.find<ExpenseController>();
   final _productCtrl = Get.find<ProductController>();
-  final _fmt         = NumberFormat.currency(locale: 'es_ES', symbol: '€');
-  final _dateFmt     = DateFormat('dd/MM/yyyy');
-  final _timeFmt     = DateFormat('HH:mm');
-
-  @override
-  void initState() {
-    super.initState();
-    _reportCtrl.loadAll();
-    _reportCtrl.loadToday();
-    _expenseCtrl.loadToday();
-  }
+  final _fmt         = AppFormats.currency;
+  final _dateFmt     = AppFormats.date;
+  final _timeFmt     = AppFormats.time;
 
   void _showAddExpense() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => ExpenseFormSheet(
         products: _productCtrl.products.toList(),
         onSave: (expense) async {
           await _expenseCtrl.addExpense(expense);
-          final total = _expenseCtrl.todayTotal;
-          await _reportCtrl.addExpenseToday(
-            total - (_reportCtrl.todayExpenses),
-          );
+          await _reportCtrl.refreshAfterExpense();
           await _productCtrl.loadAll();
         },
       ),
@@ -89,22 +79,13 @@ class _CajaSectionState extends State<CajaSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Row(
-            children: [
-              Text('Caja / Balance', style: theme.textTheme.headlineMedium),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: () async {
-                  await _reportCtrl.loadAll();
-                  await _reportCtrl.loadToday();
-                  await _expenseCtrl.loadToday();
-                },
-              ),
-            ],
-          ),
+        SectionHeader(
+          title:     'Caja / Balance',
+          onRefresh: () async {
+            await _reportCtrl.loadAll();
+            await _reportCtrl.loadToday();
+            await _expenseCtrl.loadToday();
+          },
         ),
 
         Expanded(

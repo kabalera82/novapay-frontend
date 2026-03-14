@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import '../../data/models/ticket.dart';
 import '../../data/models/ticket_line.dart';
 import '../../services/ticket_service.dart';
+import 'product_controller.dart';
+import 'report_controller.dart';
+import 'ticket_history_controller.dart';
 
 class TicketController extends GetxController {
   final TicketService _service;
@@ -105,6 +108,7 @@ class TicketController extends GetxController {
       await _service.pay(activeTicket.value!, method);
       activeTicket.value = null;
       await loadTickets();
+      Get.find<TicketHistoryController>().loadAll();
     } catch (e) {
       Get.snackbar('Error', 'No se pudo cobrar el ticket');
     }
@@ -116,6 +120,7 @@ class TicketController extends GetxController {
       await _service.cancel(activeTicket.value!);
       activeTicket.value = null;
       await loadTickets();
+      Get.find<TicketHistoryController>().loadAll();
     } catch (e) {
       Get.snackbar('Error', 'No se pudo cancelar el ticket');
     }
@@ -132,6 +137,10 @@ class TicketController extends GetxController {
         activeTicket.value = updated;
       }
       await loadTickets();
+      // Refresh product stock, live balance and ticket history after payment
+      Get.find<ProductController>().loadAll();
+      Get.find<ReportController>().loadLiveStats();
+      Get.find<TicketHistoryController>().loadAll();
     } catch (e) {
       Get.snackbar('Error', 'No se pudo procesar el pago');
     }

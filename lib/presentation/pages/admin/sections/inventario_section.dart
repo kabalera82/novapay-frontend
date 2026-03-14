@@ -6,6 +6,9 @@ import 'package:isar/isar.dart';
 import '../../../../config/theme.dart';
 import '../../../../data/models/product.dart';
 import '../../../controllers/product_controller.dart';
+import '../../../widgets/common/confirm_delete_dialog.dart';
+import '../../../widgets/common/filter_chip_button.dart';
+import '../../../widgets/common/section_header.dart';
 import '../../../widgets/inventario/product_form_sheet.dart';
 import '../../../widgets/inventario/product_tile.dart';
 import '../../../widgets/inventario/stat_badge.dart';
@@ -32,7 +35,7 @@ class _InventarioSectionState extends State<InventarioSection> {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => ProductFormSheet(
         product: product,
@@ -48,25 +51,12 @@ class _InventarioSectionState extends State<InventarioSection> {
   }
 
   Future<void> _confirmDelete(Product p) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Eliminar producto'),
-        content: Text('¿Eliminar "${p.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+    final ok = await ConfirmDeleteDialog.show(
+      context,
+      title:   'Eliminar producto',
+      message: '¿Eliminar "${p.name}"?',
     );
-    if (ok == true) await _ctrl.remove(p.id);
+    if (ok) await _ctrl.remove(p.id);
   }
 
   @override
@@ -76,23 +66,13 @@ class _InventarioSectionState extends State<InventarioSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Row(
-            children: [
-              Text('Inventario', style: theme.textTheme.headlineMedium),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                tooltip: 'Recargar',
-                onPressed: _ctrl.loadAll,
-              ),
-              ElevatedButton.icon(
-                icon:  const Icon(Icons.add, size: 18),
-                label: const Text('Nuevo'),
-                onPressed: () => _openForm(),
-              ),
-            ],
+        SectionHeader(
+          title:     'Inventario',
+          onRefresh: _ctrl.loadAll,
+          trailing: ElevatedButton.icon(
+            icon:      const Icon(Icons.add, size: 18),
+            label:     const Text('Nuevo'),
+            onPressed: () => _openForm(),
           ),
         ),
 
@@ -122,30 +102,10 @@ class _InventarioSectionState extends State<InventarioSection> {
                 final cat      = cats[i];
                 final selected = _ctrl.selectedCategory.value == cat ||
                     (cat == 'Todos' && _ctrl.selectedCategory.value.isEmpty);
-                return GestureDetector(
-                  onTap: () => _ctrl.applyFilter(cat),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? AppTheme.primary.withValues(alpha: 0.12)
-                          : AppTheme.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: selected ? AppTheme.primary : AppTheme.border,
-                        width: selected ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Text(
-                      cat,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: selected ? AppTheme.primary : AppTheme.textSecondary,
-                        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                      ),
-                    ),
-                  ),
+                return FilterChipButton(
+                  label:    cat,
+                  selected: selected,
+                  onTap:    () => _ctrl.applyFilter(cat),
                 );
               },
             ),

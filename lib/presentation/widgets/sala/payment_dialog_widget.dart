@@ -1,7 +1,7 @@
 // lib/presentation/widgets/sala/payment_dialog_widget.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
+import '../../../config/app_formats.dart';
 import '../../../data/models/ticket.dart';
 import '../../../data/models/ticket_line.dart';
 
@@ -35,7 +35,7 @@ class PaymentDialogWidget extends StatefulWidget {
 }
 
 class _PaymentDialogWidgetState extends State<PaymentDialogWidget> {
-  final _fmt      = NumberFormat.currency(locale: 'es_ES', symbol: '€');
+  final _fmt      = AppFormats.currency;
   final _cashCtrl = TextEditingController();
 
   late final List<bool> _selected;

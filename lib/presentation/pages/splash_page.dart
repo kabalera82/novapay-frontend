@@ -4,11 +4,10 @@ import 'package:get/get.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
-import 'login_page.dart';
+import '../../config/app_routes.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
-  static const String routename = '/splash';
 
   @override
   State<SplashPage> createState() => _SplashPageState();
@@ -36,7 +35,7 @@ _player.stream.playing.listen((_) {
     _player.stream.completed.listen((completed) {
       if (completed && mounted && !_hasNavigated) {
         _hasNavigated = true;
-        Get.offNamed(LoginPage.routename);
+        Get.offNamed(AppRoutes.login);
       }
     });
   }

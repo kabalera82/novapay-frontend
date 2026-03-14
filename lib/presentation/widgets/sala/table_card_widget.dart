@@ -1,7 +1,7 @@
 // lib/presentation/widgets/sala/table_card_widget.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
+import '../../../config/app_formats.dart';
 import '../../../data/models/ticket.dart';
 
 class TableCardWidget extends StatelessWidget {
@@ -63,8 +63,7 @@ class TableCardWidget extends StatelessWidget {
             ),
             if (isOccupied) ...[
               Text(
-                NumberFormat.currency(locale: 'es_ES', symbol: '€')
-                    .format(ticket!.totalAmount),
+                AppFormats.currency.format(ticket!.totalAmount),
                 style: TextStyle(
                   fontSize: 10,
                   color: fgColor,

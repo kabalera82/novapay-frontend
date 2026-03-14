@@ -3,12 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controllers/auth_controller.dart';
-import 'admin/admin_shell_page.dart';
-import 'profile_page.dart';
+import '../../config/app_routes.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-  static const String routename = '/login';
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -39,9 +37,9 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     if (authCtrl.isAdmin) {
-      Get.offNamed(AdminShellPage.routename, arguments: authCtrl.currentUser.value);
+      Get.offNamed(AppRoutes.admin, arguments: authCtrl.currentUser.value);
     } else {
-      Get.offNamed(ProfilePage.routename, arguments: authCtrl.currentUser.value);
+      Get.offNamed(AppRoutes.user, arguments: authCtrl.currentUser.value);
     }
   }
 
@@ -52,8 +50,10 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Bienvenido a NovaPay')),
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -93,6 +93,7 @@ class _LoginPageState extends State<LoginPage> {
               )),
             ],
           ),
+        ),
         ),
       ),
     );

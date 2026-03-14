@@ -38,7 +38,7 @@ class AppBindings extends Bindings {
     Get.put(UserController(Get.find<UserService>()),              permanent: true);
     Get.put(ProductController(Get.find<ProductService>()),        permanent: true);
     Get.put(TicketController(Get.find<TicketService>()),          permanent: true);
-    Get.put(TicketHistoryController(Get.find<TicketService>()), permanent: true);
+    Get.put(TicketHistoryController(Get.find<TicketService>()),  permanent: true);
     Get.put(ReportController(Get.find<ReportService>()),          permanent: true);
     Get.put(ConfigController(Get.find<ConfigService>()),          permanent: true);
     Get.put(ExpenseController(Get.find<ExpenseService>()),        permanent: true);

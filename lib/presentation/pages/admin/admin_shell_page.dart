@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../config/theme.dart';
+import '../../../config/app_routes.dart';
 import '../../../data/models/user.dart';
 import '../../controllers/admin_shell_controller.dart';
-import '../login_page.dart';
 import 'sections/personal_area_section.dart';
 import 'sections/users_list_section.dart';
 import 'sections/sala_section.dart';
@@ -15,8 +15,6 @@ import 'sections/caja_section.dart';
 import 'sections/verifactu_section.dart';
 
 class AdminShellPage extends StatefulWidget {
-  static const String routename = '/admin';
-
   const AdminShellPage({super.key});
 
   @override
@@ -99,7 +97,7 @@ class _AdminShellPageState extends State<AdminShellPage> {
         IconButton(
           icon: const Icon(Icons.logout),
           tooltip: 'Cerrar sesión',
-          onPressed: () => Get.offNamed(LoginPage.routename),
+          onPressed: () => Get.offNamed(AppRoutes.login),
         ),
       ],
     );
@@ -165,9 +163,9 @@ class _AdminShellPageState extends State<AdminShellPage> {
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const Text(
+                      Text(
                         'Administrador',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.70), fontSize: 12),
                       ),
                     ],
                   ),

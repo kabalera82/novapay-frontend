@@ -3,9 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../config/app_formats.dart';
 import '../../../../config/theme.dart';
+import '../../../../data/models/product.dart';
 import '../../../../data/models/ticket.dart';
+import '../../../../data/models/ticket_line.dart';
 import '../../../controllers/ticket_history_controller.dart';
+import '../../../widgets/common/confirm_delete_dialog.dart';
+import '../../../widgets/common/filter_chip_button.dart';
+import '../../../widgets/common/section_header.dart';
+import '../../../widgets/common/ticket_status_badge.dart';
+import '../../../widgets/sala/payment_dialog_widget.dart';
+import '../../../widgets/sala/product_picker_widget.dart';
 
 class TicketsSection extends StatefulWidget {
   const TicketsSection({super.key});
@@ -16,18 +25,12 @@ class TicketsSection extends StatefulWidget {
 
 class _TicketsSectionState extends State<TicketsSection> {
   final _ctrl = Get.find<TicketHistoryController>();
-  final _fmt  = NumberFormat.currency(locale: 'es_ES', symbol: '€');
-  final _dateFmt = DateFormat('dd/MM/yyyy HH:mm');
+  final _fmt     = AppFormats.currency;
+  final _dateFmt = AppFormats.dateTime;
 
   // Filtros
   TicketStatus? _statusFilter;   // null = todos
   DateTime?     _dateFilter;     // null = todos los días
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl.loadAll();
-  }
 
   // ── Filtrado ──────────────────────────────────────────────────────────────
 
@@ -64,17 +67,18 @@ class _TicketsSectionState extends State<TicketsSection> {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => _TicketDetailSheet(
         ticket:   ticket,
         fmt:      _fmt,
         dateFmt:  _dateFmt,
-        onReopen: () async {
+        onCorrect: () {
+          // Cierra el detalle y abre el panel de corrección
           Navigator.pop(context);
-          await _ctrl.reopenById(ticket);
-          await _ctrl.loadAll();
-          setState(() {});
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _showCorrection(ticket);
+          });
         },
         onDelete: () async {
           final ok = await _confirmDelete(ticket);
@@ -95,31 +99,31 @@ class _TicketsSectionState extends State<TicketsSection> {
     );
   }
 
+  /// Abre el panel de corrección de cobro para un ticket cerrado.
+  /// El ticket nunca vuelve a la sala: se edita y se vuelve a cerrar aquí mismo.
+  Future<void> _showCorrection(Ticket ticket) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _TicketCorrectionSheet(initialTicket: ticket),
+    );
+    // Refresca el historial al cerrar el panel (completado o abandonado)
+    if (!mounted) return;
+    await _ctrl.loadAll();
+    setState(() {});
+  }
+
   Future<bool> _confirmDelete(Ticket ticket) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Eliminar ticket'),
-            content: Text(
-              '¿Seguro que quieres eliminar el ticket #${ticket.id}? '
-              'Esta acción no se puede deshacer.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.error,
-                ),
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Eliminar'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    return ConfirmDeleteDialog.show(
+      context,
+      title:   'Eliminar ticket',
+      message: '¿Seguro que quieres eliminar el ticket #${ticket.id}? '
+          'Esta acción no se puede deshacer.',
+    );
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -132,22 +136,12 @@ class _TicketsSectionState extends State<TicketsSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── Cabecera ────────────────────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Row(
-            children: [
-              Text('Tickets', style: theme.textTheme.headlineMedium),
-              const Spacer(),
-              IconButton(
-                icon:    const Icon(Icons.refresh),
-                tooltip: 'Recargar',
-                onPressed: () async {
-                  await _ctrl.loadAll();
-                  setState(() {});
-                },
-              ),
-            ],
-          ),
+        SectionHeader(
+          title:     'Tickets',
+          onRefresh: () async {
+            await _ctrl.loadAll();
+            setState(() {});
+          },
         ),
 
         // ── Filtros ─────────────────────────────────────────────────────────
@@ -158,36 +152,36 @@ class _TicketsSectionState extends State<TicketsSection> {
             runSpacing: 4,
             children: [
               // Estado
-              _FilterChip(
-                label: 'Todos',
+              FilterChipButton(
+                label:    'Todos',
                 selected: _statusFilter == null,
-                onTap: () => setState(() => _statusFilter = null),
+                onTap:    () => setState(() => _statusFilter = null),
               ),
-              _FilterChip(
-                label: 'Abiertos',
-                color: AppTheme.info,
+              FilterChipButton(
+                label:    'Abiertos',
+                color:    AppTheme.info,
                 selected: _statusFilter == TicketStatus.abierto,
-                onTap: () => setState(
+                onTap:    () => setState(
                   () => _statusFilter = _statusFilter == TicketStatus.abierto
                       ? null
                       : TicketStatus.abierto,
                 ),
               ),
-              _FilterChip(
-                label: 'Pagados',
-                color: AppTheme.success,
+              FilterChipButton(
+                label:    'Pagados',
+                color:    AppTheme.success,
                 selected: _statusFilter == TicketStatus.pagado,
-                onTap: () => setState(
+                onTap:    () => setState(
                   () => _statusFilter = _statusFilter == TicketStatus.pagado
                       ? null
                       : TicketStatus.pagado,
                 ),
               ),
-              _FilterChip(
-                label: 'Cancelados',
-                color: AppTheme.error,
+              FilterChipButton(
+                label:    'Cancelados',
+                color:    AppTheme.error,
                 selected: _statusFilter == TicketStatus.cancelado,
-                onTap: () => setState(
+                onTap:    () => setState(
                   () => _statusFilter = _statusFilter == TicketStatus.cancelado
                       ? null
                       : TicketStatus.cancelado,
@@ -204,7 +198,7 @@ class _TicketsSectionState extends State<TicketsSection> {
                 ),
                 label: Text(
                   _dateFilter != null
-                      ? DateFormat('dd/MM/yyyy').format(_dateFilter!)
+                      ? AppFormats.date.format(_dateFilter!)
                       : 'Fecha',
                   style: TextStyle(
                     color: _dateFilter != null
@@ -286,34 +280,10 @@ class _TicketRow extends StatelessWidget {
     required this.onTap,
   });
 
-  Color _statusColor() {
-    return switch (ticket.status) {
-      TicketStatus.abierto   => AppTheme.info,
-      TicketStatus.pagado    => AppTheme.success,
-      TicketStatus.cancelado => AppTheme.error,
-    };
-  }
-
-  String _statusLabel() {
-    return switch (ticket.status) {
-      TicketStatus.abierto   => 'Abierto',
-      TicketStatus.pagado    => 'Pagado',
-      TicketStatus.cancelado => 'Cancelado',
-    };
-  }
-
-  String _methodLabel() {
-    return switch (ticket.paymentMethod) {
-      PaymentMethod.efectivo => 'Efectivo',
-      PaymentMethod.tarjeta  => 'Tarjeta',
-      PaymentMethod.mixto    => 'Mixto',
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = _statusColor();
+    final color = ticketStatusColor(ticket.status);
 
     return ListTile(
       onTap: onTap,
@@ -334,26 +304,12 @@ class _TicketRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              _statusLabel(),
-              style: TextStyle(
-                fontSize: 11,
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+          TicketStatusBadge(ticket.status),
         ],
       ),
       subtitle: Text(
         '${dateFmt.format(ticket.createdAt)}  ·  '
-        '${ticket.lines.length} líneas  ·  ${_methodLabel()}',
+        '${ticket.lines.length} líneas  ·  ${paymentMethodLabel(ticket.paymentMethod)}',
         style: theme.textTheme.bodySmall,
       ),
       trailing: Text(
@@ -372,7 +328,7 @@ class _TicketDetailSheet extends StatelessWidget {
   final Ticket      ticket;
   final NumberFormat fmt;
   final DateFormat   dateFmt;
-  final VoidCallback onReopen;
+  final VoidCallback onCorrect;
   final VoidCallback onDelete;
   final void Function(PaymentMethod) onChangeMethod;
 
@@ -380,27 +336,14 @@ class _TicketDetailSheet extends StatelessWidget {
     required this.ticket,
     required this.fmt,
     required this.dateFmt,
-    required this.onReopen,
+    required this.onCorrect,
     required this.onDelete,
     required this.onChangeMethod,
   });
 
-  String _statusLabel() => switch (ticket.status) {
-        TicketStatus.abierto   => 'Abierto',
-        TicketStatus.pagado    => 'Pagado',
-        TicketStatus.cancelado => 'Cancelado',
-      };
-
-  Color _statusColor() => switch (ticket.status) {
-        TicketStatus.abierto   => AppTheme.info,
-        TicketStatus.pagado    => AppTheme.success,
-        TicketStatus.cancelado => AppTheme.error,
-      };
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = _statusColor();
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
@@ -439,20 +382,12 @@ class _TicketDetailSheet extends StatelessWidget {
                   ],
                 ),
                 const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    _statusLabel(),
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
+                TicketStatusBadge(
+                  ticket.status,
+                  padding:      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  fontSize:     13,
+                  borderRadius: 12,
+                  fontWeight:   FontWeight.bold,
                 ),
               ],
             ),
@@ -569,9 +504,13 @@ class _TicketDetailSheet extends StatelessWidget {
                 // ── Acciones ───────────────────────────────────────────────
                 if (ticket.status != TicketStatus.abierto)
                   ElevatedButton.icon(
-                    icon:  const Icon(Icons.lock_open_outlined),
-                    label: const Text('Reabrir ticket'),
-                    onPressed: onReopen,
+                    icon:  const Icon(Icons.edit_note),
+                    label: const Text('Corregir cobro'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.warning,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: onCorrect,
                   ),
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
@@ -593,45 +532,314 @@ class _TicketDetailSheet extends StatelessWidget {
   }
 }
 
-// ── Chip de filtro ─────────────────────────────────────────────────────────────
+// ── Panel de corrección de cobro ───────────────────────────────────────────────
+//
+// Permite editar las líneas de un ticket ya cerrado (pagado/cancelado) y
+// volver a cobrarlo con el importe correcto.
+// El ticket NUNCA vuelve a la sala: permanece en el historial.
 
-class _FilterChip extends StatelessWidget {
-  final String       label;
-  final bool         selected;
-  final VoidCallback onTap;
-  final Color?       color;
+class _TicketCorrectionSheet extends StatefulWidget {
+  final Ticket initialTicket;
 
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.color,
+  const _TicketCorrectionSheet({required this.initialTicket});
+
+  @override
+  State<_TicketCorrectionSheet> createState() => _TicketCorrectionSheetState();
+}
+
+class _TicketCorrectionSheetState extends State<_TicketCorrectionSheet> {
+  final _ctrl = Get.find<TicketHistoryController>();
+  final _fmt  = AppFormats.currency;
+  bool _showingPicker = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl.startEditing(widget.initialTicket);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.stopEditing();
+    super.dispose();
+  }
+
+  Future<void> _recharge() async {
+    final ticket = _ctrl.editingTicket.value;
+    if (ticket == null || ticket.lines.isEmpty) {
+      Get.snackbar('Sin líneas', 'Añade al menos un producto antes de cobrar');
+      return;
+    }
+    await PaymentDialogWidget.show(
+      context,
+      lines: ticket.lines,
+      onConfirm: (lineIndices, method) async {
+        await _ctrl.rechargeEditing(lineIndices, method);
+        if (mounted) Navigator.of(context).pop();
+      },
+    );
+  }
+
+  Future<void> _cancelTicket() async {
+    final ok = await ConfirmDeleteDialog.show(
+      context,
+      title:   'Cancelar ticket',
+      message: '¿Marcar este ticket como cancelado? '
+          'Esta acción actualiza el registro pero no vuelve a sala.',
+    );
+    if (!ok || !mounted) return;
+    await _ctrl.cancelEditing();
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize:     0.5,
+      maxChildSize:     0.95,
+      expand: false,
+      builder: (_, scrollCtrl) => Column(
+        children: [
+          // ── Handle ──────────────────────────────────────────────────────
+          Container(
+            margin: const EdgeInsets.only(top: 10, bottom: 4),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppTheme.border,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // ── Cabecera ─────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.initialTicket.tableOrLabel ??
+                          'Mesa ${widget.initialTicket.tableNumber ?? '-'}',
+                      style: theme.textTheme.headlineSmall,
+                    ),
+                    Text(
+                      'Corrección de cobro',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppTheme.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                // Total reactivo
+                Obx(() {
+                  final total = _ctrl.editingTicket.value?.totalAmount ?? 0;
+                  return Text(
+                    _fmt.format(total),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+
+          const Divider(),
+
+          // ── Líneas reactivas ─────────────────────────────────────────────
+          Expanded(
+            child: Obx(() {
+              final lines = _ctrl.editingTicket.value?.lines ?? [];
+
+              return ListView(
+                controller: scrollCtrl,
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                children: [
+                  if (lines.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: Text(
+                          'Sin líneas. Añade productos con el botón inferior.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    )
+                  else
+                    ...lines.map(
+                      (line) => _CorrectionLineTile(
+                        line:        line,
+                        fmt:         _fmt,
+                        onIncrease:  () => _ctrl.changeLineQtyInEditing(line.productName, 1),
+                        onDecrease:  () => _ctrl.changeLineQtyInEditing(line.productName, -1),
+                        onDelete:    () => _ctrl.removeLineFromEditing(line.productName),
+                      ),
+                    ),
+
+                  // ── Picker de productos (toggle) ─────────────────────────
+                  if (_showingPicker) ...[
+                    const Divider(height: 24),
+                    SizedBox(
+                      height: 280,
+                      child: ProductPickerWidget(
+                        onProductSelected: (Product product) {
+                          final line = TicketLine()
+                            ..productName   = product.name
+                            ..productId     = product.id
+                            ..quantity      = 1
+                            ..priceAtMoment = product.price
+                            ..totalLine     = product.price;
+                          _ctrl.addLineToEditing(line);
+                        },
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 12),
+                ],
+              );
+            }),
+          ),
+
+          // ── Barra de acciones ────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              border: const Border(top: BorderSide(color: AppTheme.border)),
+            ),
+            child: Row(
+              children: [
+                // Añadir / Cerrar picker
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon:  Icon(_showingPicker ? Icons.close : Icons.add),
+                    label: Text(_showingPicker ? 'Cerrar' : 'Añadir'),
+                    onPressed: () =>
+                        setState(() => _showingPicker = !_showingPicker),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Cancelar ticket
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon:  const Icon(Icons.cancel_outlined),
+                    label: const Text('Cancelar'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.error,
+                      side: const BorderSide(color: AppTheme.error),
+                    ),
+                    onPressed: _cancelTicket,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Re-cobrar
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon:  const Icon(Icons.payment),
+                    label: const Text('Re-cobrar'),
+                    onPressed: _recharge,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Fila de línea editable en corrección ──────────────────────────────────────
+
+class _CorrectionLineTile extends StatelessWidget {
+  final TicketLine   line;
+  final NumberFormat fmt;
+  final VoidCallback onIncrease;
+  final VoidCallback onDecrease;
+  final VoidCallback onDelete;
+
+  const _CorrectionLineTile({
+    required this.line,
+    required this.fmt,
+    required this.onIncrease,
+    required this.onDecrease,
+    required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? AppTheme.primary;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? c.withValues(alpha: 0.12) : AppTheme.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? c : AppTheme.border,
-            width: selected ? 1.5 : 1,
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          // Botón decrementar
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline),
+            onPressed: onDecrease,
+            iconSize: 20,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
           ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: selected ? c : AppTheme.textSecondary,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+          // Cantidad
+          SizedBox(
+            width: 28,
+            child: Text(
+              '${line.quantity}',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
-        ),
+          // Botón incrementar
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: onIncrease,
+            iconSize: 20,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+          ),
+          const SizedBox(width: 8),
+          // Nombre producto
+          Expanded(
+            child: Text(
+              line.productName,
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
+          // Importe línea
+          Text(
+            fmt.format(line.totalLine),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Eliminar línea
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: onDelete,
+            iconSize: 18,
+            color: AppTheme.error,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+          ),
+        ],
       ),
     );
   }

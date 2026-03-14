@@ -9,6 +9,7 @@ class ReportController extends GetxController {
 
   final reports     = <DailyReport>[].obs;
   final todayReport = Rxn<DailyReport>();
+  final liveStats   = Rxn<DailyReport>();
   final isLoading   = false.obs;
   final isClosing   = false.obs;
 
@@ -17,6 +18,7 @@ class ReportController extends GetxController {
     super.onInit();
     loadAll();
     loadToday();
+    loadLiveStats();
   }
 
   Future<void> loadAll() async {
@@ -38,11 +40,20 @@ class ReportController extends GetxController {
     }
   }
 
+  Future<void> loadLiveStats() async {
+    try {
+      liveStats.value = await _service.getLiveStats();
+    } catch (e) {
+      Get.snackbar('Error', 'No se pudo calcular el balance');
+    }
+  }
+
   Future<void> closeDay() async {
     try {
       isClosing.value = true;
       final report = await _service.closeDay();
       todayReport.value = report;
+      liveStats.value   = report;
       await loadAll();
     } catch (e) {
       Get.snackbar('Error', 'No se pudo cerrar la jornada');
@@ -51,24 +62,32 @@ class ReportController extends GetxController {
     }
   }
 
-  Future<void> addExpenseToday(double amount) async {
-    try {
-      await _service.addExpense(amount);
-      await loadToday();
-      await loadAll();
-    } catch (e) {
-      Get.snackbar('Error', 'No se pudo registrar el gasto');
-    }
+  /// Reloads stats from DB after a new expense is saved.
+  Future<void> refreshAfterExpense() async {
+    await loadLiveStats();
+    await loadToday();
   }
 
-  double get todayCash     => todayReport.value?.totalCash ?? 0;
-  double get todayCard     => todayReport.value?.totalCard ?? 0;
-  double get todayTotal    => todayReport.value?.grandTotal ?? 0;
-  double get todayExpenses => todayReport.value?.totalExpenses ?? 0;
-  int    get todayCount    => todayReport.value?.ticketCount ?? 0;
+  // ── Getters (live stats take priority, fallback to closed report) ─────────
+
+  double get todayCash => liveStats.value?.totalCash
+      ?? todayReport.value?.totalCash ?? 0;
+
+  double get todayCard => liveStats.value?.totalCard
+      ?? todayReport.value?.totalCard ?? 0;
+
+  /// Gross ticket income (cash + card), used as «Ingresos» in the balance view.
+  double get todayTotal =>
+      (liveStats.value?.totalCash ?? 0) + (liveStats.value?.totalCard ?? 0);
+
+  double get todayExpenses => liveStats.value?.totalExpenses ?? 0;
+
+  int get todayCount => liveStats.value?.ticketCount
+      ?? todayReport.value?.ticketCount ?? 0;
 
   Map<String, int> get todaySoldProducts {
-    final summary = todayReport.value?.soldProductsSummary ?? [];
+    final summary = liveStats.value?.soldProductsSummary
+        ?? todayReport.value?.soldProductsSummary ?? [];
     final map = <String, int>{};
     for (final entry in summary) {
       final parts = entry.split(':');
