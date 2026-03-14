@@ -145,8 +145,11 @@ class TicketService {
         final product =
             allProducts.where((p) => p.name == line.productName).firstOrNull;
         if (product != null) {
-          product.stock = (product.stock - line.quantity).clamp(0, 999999);
-          await _isar.products.put(product);
+          final isUnlimited = product.stock > 100 || product.stock < 0;
+          if (!isUnlimited) {
+            product.stock = (product.stock - line.quantity).clamp(0, 999999);
+            await _isar.products.put(product);
+          }
         }
       }
     });
