@@ -35,7 +35,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
       _catCtrl.text     = p.category ?? '';
       _priceCtrl.text   = p.price.toStringAsFixed(2);
       _costCtrl.text    = p.costPrice?.toStringAsFixed(2) ?? '';
-      _stockCtrl.text   = '${p.stock}';
+      _stockCtrl.text   = p.stock < 0 ? '' : '${p.stock}';
       _barcodeCtrl.text = p.barcode ?? '';
       _taxRate          = p.taxRate;
     }
