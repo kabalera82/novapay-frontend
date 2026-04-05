@@ -8,7 +8,6 @@ import 'config/app_routes.dart';
 import 'data/local/isar.dart';
 import 'data/seed/product_seed.dart';
 import 'services/user_service.dart';
-import 'services/config_service.dart';
 import 'bindings/app_bindings.dart';
 import 'presentation/pages/splash_page.dart';
 import 'presentation/pages/login_page.dart';
@@ -32,7 +31,6 @@ void main() async {
   final isar = await openIsar();
   await UserService(isar).seedAdmin();
   await seedProducts(isar);
-  await ConfigService(isar).seedBusinessConfig();
   runApp(MainApp(isar: isar));
 }
 

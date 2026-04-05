@@ -34,15 +34,16 @@ class ConfigService {
   }
 
   Future<void> seedBusinessConfig() async {
-    final existing = await _isar.businessConfigs.count();
-    if (existing > 0) return;
-    final config = BusinessConfig()
-      ..businessName = ''
-      ..cifNif = ''
-      ..address = ''
-      ..adminPassword = '1234';
-    await _isar.writeTxn(() async {
-      await _isar.businessConfigs.put(config);
-    });
+    final existing = await _isar.businessConfigs.where().findFirst();
+    if (existing == null) {
+      final config = BusinessConfig()
+        ..businessName = ''
+        ..cifNif = ''
+        ..address = ''
+        ..adminPassword = '1234';
+      await _isar.writeTxn(() async {
+        await _isar.businessConfigs.put(config);
+      });
+    }
   }
 }

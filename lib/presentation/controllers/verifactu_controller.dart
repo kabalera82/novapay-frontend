@@ -23,17 +23,28 @@ class VerifactuController extends GetxController {
   void onInit() {
     super.onInit();
     loadContext();
-    refreshInteractions();
   }
 
   Future<void> loadContext() async {
     backendState.value = await _service.getBackendState();
     hasActiveJwtSession.value = _service.hasActiveJwtSession;
     adminUser.value = await _userService.getAdmin();
+
+    if ((backendState.value?.registered ?? false) && !hasActiveJwtSession.value) {
+      try {
+        await _service.authenticateBackend();
+        backendState.value = await _service.getBackendState();
+        hasActiveJwtSession.value = _service.hasActiveJwtSession;
+      } catch (_) {
+        // Si la sesión no puede restaurarse, seguimos con el estado actual sin bloquear la UI.
+      }
+    }
+
     await _syncAdminBackendLock(backendState.value?.registered ?? false);
 
     if (backendState.value?.registered ?? false) {
       await refreshSubscriptionSummary(showSnackbarOnError: false);
+      await refreshInteractions();
     } else {
       subscriptionSummary.value = null;
     }
@@ -197,6 +208,11 @@ class VerifactuController extends GetxController {
         return;
       }
 
+      final backendIdentity = await _service.refreshCompanyIdentityFromBackend();
+      if (backendIdentity != null) {
+        await _syncAdminIdentity(backendIdentity);
+      }
+
       interactions.value = await _service.fetchInteractions();
       await _syncAdminBackendLock((backendState.value?.registered ?? false) || hasActiveJwtSession.value);
     } catch (e) {
@@ -240,6 +256,67 @@ class VerifactuController extends GetxController {
     }
   }
 
+  Future<void> refreshStatus() async {
+    await refreshSubscriptionSummary(showSnackbarOnError: false);
+    await refreshInteractions();
+  }
+
+  bool canRetryInteraction(FiscalInteraction item) {
+    return item.status == 'RECHAZADO' || item.status == 'ERROR_PERMANENTE';
+  }
+
+  Future<void> retryInteraction(FiscalInteraction item) async {
+    if (!canRetryInteraction(item)) {
+      Get.snackbar('Verifactu', 'Solo se pueden reenviar tickets rechazados o con error permanente.');
+      return;
+    }
+
+    try {
+      isSubmitting.value = true;
+      await _service.retryFiscalSubmission(item.invoiceId);
+      Get.snackbar('Verifactu', 'Reenvío lanzado para ${item.invoiceSeries}-${item.invoiceNumber}.');
+      await refreshInteractions();
+    } catch (e) {
+      Get.snackbar('Verifactu', 'No se pudo reenviar ${item.invoiceSeries}-${item.invoiceNumber}: $e');
+    } finally {
+      isSubmitting.value = false;
+    }
+  }
+
+  Future<void> retryRejectedInteractions(List<FiscalInteraction> items) async {
+    final retryable = items.where(canRetryInteraction).toList();
+    if (retryable.isEmpty) {
+      Get.snackbar('Verifactu', 'No hay tickets rechazados para reenviar.');
+      return;
+    }
+
+    try {
+      isSubmitting.value = true;
+      var successCount = 0;
+
+      for (final item in retryable) {
+        try {
+          await _service.retryFiscalSubmission(item.invoiceId);
+          successCount++;
+        } catch (_) {
+          // Continuamos con el resto para no bloquear el reenvío masivo.
+        }
+      }
+
+      await refreshInteractions();
+
+      if (successCount == retryable.length) {
+        Get.snackbar('Verifactu', 'Reenvío lanzado para $successCount tickets rechazados.');
+      } else {
+        Get.snackbar('Verifactu', 'Se reenviaron $successCount de ${retryable.length} tickets rechazados.');
+      }
+    } catch (e) {
+      Get.snackbar('Verifactu', 'No se pudo completar el reenvío masivo: $e');
+    } finally {
+      isSubmitting.value = false;
+    }
+  }
+
   Future<void> _syncAdminBackendLock(bool lockFields) async {
     final admin = adminUser.value ?? await _userService.getAdmin();
     if (admin == null) {
@@ -250,6 +327,40 @@ class VerifactuController extends GetxController {
     }
 
     admin.backendEditable = lockFields;
+    await _userService.save(admin);
+    adminUser.value = admin;
+  }
+
+  Future<void> _syncAdminIdentity(VerifactuCompanyIdentity identity) async {
+    final admin = adminUser.value ?? await _userService.getAdmin();
+    if (admin == null) {
+      return;
+    }
+
+    var changed = false;
+
+    final companyName = identity.companyName?.trim();
+    if (companyName != null && companyName.isNotEmpty && admin.companyName != companyName) {
+      admin.companyName = companyName;
+      changed = true;
+    }
+
+    final taxId = identity.taxId?.trim();
+    if (taxId != null && taxId.isNotEmpty && admin.taxId != taxId) {
+      admin.taxId = taxId;
+      changed = true;
+    }
+
+    final address = identity.address?.trim();
+    if (address != null && address.isNotEmpty && admin.address != address) {
+      admin.address = address;
+      changed = true;
+    }
+
+    if (!changed) {
+      return;
+    }
+
     await _userService.save(admin);
     adminUser.value = admin;
   }

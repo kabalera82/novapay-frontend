@@ -35,7 +35,7 @@ class AppBindings extends Bindings {
     Get.put(ConfigService(isar), permanent: true);
     Get.put(ExpenseService(isar), permanent: true);
     Get.put(VerifactuService(Get.find<ConfigService>()), permanent: true);
-    Get.put(ReceiptPrintService(Get.find<UserService>()), permanent: true);
+    Get.put(ReceiptPrintService(Get.find<UserService>(), Get.find<ConfigService>()), permanent: true);
 
     // ── Controladores ────────────────────────────────────────────────────────
     Get.put(AdminShellController(), permanent: true);

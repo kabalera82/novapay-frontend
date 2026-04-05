@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import '../data/models/ticket.dart';
 import '../data/models/verifactu_models.dart';
+import '../data/models/business_config.dart';
 import 'config_service.dart';
 
 class VerifactuApiException implements Exception {
@@ -50,6 +52,7 @@ class VerifactuBackendState {
 class VerifactuRegistrationResult {
   final String message;
   final String? companyId;
+  final String? terminalId;
   final String? clientId;
   final String? planCode;
   final String? billingCycle;
@@ -60,6 +63,7 @@ class VerifactuRegistrationResult {
   const VerifactuRegistrationResult({
     required this.message,
     this.companyId,
+    this.terminalId,
     this.clientId,
     this.planCode,
     this.billingCycle,
@@ -72,6 +76,7 @@ class VerifactuRegistrationResult {
     return VerifactuRegistrationResult(
       message: (json['message'] as String?) ?? 'Registro backend completado',
       companyId: json['companyId'] as String?,
+      terminalId: json['terminalId'] as String?,
       clientId: json['clientId'] as String?,
       planCode: json['planCode'] as String?,
       billingCycle: json['billingCycle'] as String?,
@@ -85,6 +90,7 @@ class VerifactuRegistrationResult {
 class VerifactuSubscriptionSummary {
   final String clientId;
   final String companyId;
+  final String? terminalId;
   final String planCode;
   final String billingCycle;
   final String periodStart;
@@ -103,6 +109,7 @@ class VerifactuSubscriptionSummary {
   const VerifactuSubscriptionSummary({
     required this.clientId,
     required this.companyId,
+    this.terminalId,
     required this.planCode,
     required this.billingCycle,
     required this.periodStart,
@@ -123,6 +130,7 @@ class VerifactuSubscriptionSummary {
     return VerifactuSubscriptionSummary(
       clientId: (json['clientId'] as String?) ?? '',
       companyId: (json['companyId'] as String?) ?? '',
+      terminalId: json['terminalId'] as String?,
       planCode: (json['planCode'] as String?) ?? '',
       billingCycle: (json['billingCycle'] as String?) ?? '',
       periodStart: (json['periodStart'] as String?) ?? '',
@@ -141,8 +149,22 @@ class VerifactuSubscriptionSummary {
   }
 }
 
+class VerifactuCompanyIdentity {
+  final String? companyName;
+  final String? taxId;
+  final String? address;
+
+  const VerifactuCompanyIdentity({this.companyName, this.taxId, this.address});
+
+  bool get hasData {
+    return (companyName != null && companyName!.trim().isNotEmpty) ||
+        (taxId != null && taxId!.trim().isNotEmpty) ||
+        (address != null && address!.trim().isNotEmpty);
+  }
+}
+
 class VerifactuService {
-  static const String _baseUrl = String.fromEnvironment('NOVAPAY_BACKEND_URL', defaultValue: 'http://localhost:8080');
+  static const String _baseUrlFromEnv = String.fromEnvironment('NOVAPAY_BACKEND_URL', defaultValue: '');
   static const String _clientId = String.fromEnvironment('NOVAPAY_CLIENT_ID', defaultValue: 'novapay-client');
   static const String _clientSecret = String.fromEnvironment(
     'NOVAPAY_CLIENT_SECRET',
@@ -166,6 +188,18 @@ class VerifactuService {
 
   String? _accessToken;
   DateTime? _tokenExpiresAt;
+  String? _resolvedCompanyId;
+  String? _resolvedTerminalId;
+
+  String get _baseUrl {
+    if (_baseUrlFromEnv.trim().isNotEmpty) {
+      return _baseUrlFromEnv.trim();
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8080';
+    }
+    return 'http://localhost:8080';
+  }
 
   Future<VerifactuBackendState> getBackendState() async {
     final config = await _configService.getConfig();
@@ -256,6 +290,8 @@ class VerifactuService {
       ..verifactuLastAuthAt = null;
     await _configService.saveConfig(cfg);
 
+    await _syncBusinessIdentity(companyName: companyName, taxId: taxId, address: address);
+
     return registrationResult;
   }
 
@@ -268,6 +304,8 @@ class VerifactuService {
     await _ensureToken(forceRefresh: true);
     cfg.verifactuLastAuthAt = DateTime.now();
     await _configService.saveConfig(cfg);
+
+    await refreshCompanyIdentityFromBackend();
   }
 
   Future<void> authenticateBackendWithCredentials({
@@ -306,8 +344,16 @@ class VerifactuService {
       throw Exception('Token JWT vacío en respuesta de login por email.');
     }
 
-    _accessToken = token;
-    _tokenExpiresAt = DateTime.now().add(Duration(seconds: expiresIn - 5));
+    final hasJwtFromLogin = _looksLikeJwt(token);
+
+    // Algunas implementaciones de /auth/login devuelven JWT real y otras un placeholder.
+    if (hasJwtFromLogin) {
+      _accessToken = token;
+      _tokenExpiresAt = DateTime.now().add(Duration(seconds: expiresIn - 5));
+    } else {
+      _accessToken = null;
+      _tokenExpiresAt = null;
+    }
 
     final cfg = await _configService.getConfig();
     cfg
@@ -323,6 +369,23 @@ class VerifactuService {
     }
 
     await _configService.saveConfig(cfg);
+
+    // Si el login ya entregó JWT válido, se usa directamente.
+    if (hasJwtFromLogin) {
+      await refreshCompanyIdentityFromBackend();
+      return;
+    }
+
+    // Si no hay JWT en /login, se intenta flujo legacy /auth/token.
+    if (cfg.verifactuClientId == null || cfg.verifactuClientId!.trim().isEmpty) {
+      throw const VerifactuApiException(
+        'Login correcto, pero backend no devolvió clientId para obtener JWT operativo. '
+        'Revisa respuesta de /api/v1/auth/login.',
+      );
+    }
+
+    await _ensureToken(forceRefresh: true);
+    await refreshCompanyIdentityFromBackend();
   }
 
   Future<void> requestPasswordRecovery({required String email}) async {
@@ -420,7 +483,11 @@ class VerifactuService {
       );
     }
 
-    return VerifactuSubscriptionSummary.fromJson(decodeJsonObject(response.body));
+    final summary = VerifactuSubscriptionSummary.fromJson(decodeJsonObject(response.body));
+    _resolvedCompanyId = summary.companyId.trim().isEmpty ? null : summary.companyId.trim();
+    final terminal = summary.terminalId?.trim();
+    _resolvedTerminalId = (terminal == null || terminal.isEmpty) ? null : terminal;
+    return summary;
   }
 
   Future<InvoiceEmissionResult> emitTicket(Ticket ticket) async {
@@ -443,13 +510,14 @@ class VerifactuService {
     final now = DateTime.now();
     final issueDate = DateFormat('yyyy-MM-dd').format(now);
     final number = now.millisecondsSinceEpoch.remainder(1000000);
+    final fiscalContext = await _resolveEmissionContext();
 
     final payload = {
       'series': _series,
       'number': number,
       'type': 'SIMPLIFICADA',
-      'companyId': _companyId,
-      'terminalId': _terminalId,
+      'companyId': fiscalContext.companyId,
+      'terminalId': fiscalContext.terminalId,
       'issueDate': issueDate,
       'lines': ticket.lines
           .map(
@@ -542,8 +610,79 @@ class VerifactuService {
     return decodeJsonObjectList(response.body).map(FiscalInteraction.fromJson).toList();
   }
 
+  Future<void> retryFiscalSubmission(String invoiceId) async {
+    final state = await getBackendState();
+    if (!state.canUseBackend && !hasActiveJwtSession) {
+      throw const VerifactuLocalModeException('No hay sesión activa en backend para reenviar.');
+    }
+
+    await _ensureToken();
+
+    final response = await _httpClient.post(
+      Uri.parse('$_baseUrl/api/v1/fiscal/retry/$invoiceId'),
+      headers: _authHeaders,
+    );
+
+    if (response.statusCode != 204) {
+      throw VerifactuApiException(
+        'Error al reintentar envío fiscal',
+        statusCode: response.statusCode,
+        responseBody: response.body,
+      );
+    }
+  }
+
+  Future<VerifactuCompanyIdentity?> refreshCompanyIdentityFromBackend() async {
+    final cfg = await _configService.getConfig();
+    final clientId = cfg.verifactuClientId?.trim();
+    if (clientId == null || clientId.isEmpty) {
+      return null;
+    }
+
+    await _ensureToken();
+
+    String? companyId = _resolvedCompanyId;
+    if (companyId == null || companyId.isEmpty) {
+      try {
+        final summary = await fetchSubscriptionSummary();
+        companyId = summary.companyId.trim();
+      } catch (_) {
+        companyId = null;
+      }
+    }
+
+    final payload = await _tryFetchCompanyPayload(clientId: clientId, companyId: companyId);
+    if (payload == null) {
+      return null;
+    }
+
+    final companyMap = _extractCompanyMap(payload);
+
+    final companyName = _firstNonBlankString(companyMap, const [
+      'name',
+      'companyName',
+      'businessName',
+      'razonSocial',
+      'nombreRazon',
+    ]);
+    final taxId = _firstNonBlankString(companyMap, const ['taxId', 'cif', 'cifNif', 'nif', 'clientId']);
+    final address = _firstNonBlankString(companyMap, const ['address', 'direccion', 'fiscalAddress']);
+
+    final identity = VerifactuCompanyIdentity(companyName: companyName, taxId: taxId, address: address);
+    if (!identity.hasData) {
+      return null;
+    }
+
+    await _syncBusinessIdentity(companyName: companyName, taxId: taxId, address: address);
+    return identity;
+  }
+
   Future<void> _ensureToken({bool forceRefresh = false}) async {
-    if (_accessToken != null && _tokenExpiresAt != null && DateTime.now().isBefore(_tokenExpiresAt!) && !forceRefresh) {
+    if (_accessToken != null &&
+        _tokenExpiresAt != null &&
+        DateTime.now().isBefore(_tokenExpiresAt!) &&
+        !forceRefresh &&
+        _looksLikeJwt(_accessToken!)) {
       return;
     }
 
@@ -568,8 +707,13 @@ class VerifactuService {
     }
 
     final body = decodeJsonObject(response.body);
-    final token = body['accessToken'] as String?;
-    final expiresIn = (body['expiresIn'] as num?)?.toInt() ?? 60;
+    final token = ((body['accessToken'] as String?) ?? (body['access_token'] as String?))?.trim();
+    final expiresRaw = body['expiresIn'] ?? body['expires_in'];
+    final expiresIn = switch (expiresRaw) {
+      num n => n.toInt(),
+      String s => int.tryParse(s) ?? 60,
+      _ => 60,
+    };
     if (token == null || token.isEmpty) {
       throw Exception('Token JWT vacío en respuesta de autenticación.');
     }
@@ -578,11 +722,130 @@ class VerifactuService {
     _tokenExpiresAt = DateTime.now().add(Duration(seconds: expiresIn - 5));
   }
 
+  bool _looksLikeJwt(String token) {
+    final parts = token.split('.');
+    return parts.length == 3 && parts.every((part) => part.isNotEmpty);
+  }
+
+  Future<({String companyId, String terminalId})> _resolveEmissionContext() async {
+    if (_resolvedCompanyId != null && _resolvedTerminalId != null) {
+      return (companyId: _resolvedCompanyId!, terminalId: _resolvedTerminalId!);
+    }
+
+    try {
+      await fetchSubscriptionSummary();
+    } catch (_) {
+      // Si falla consulta de contexto, se evaluará fallback/env abajo.
+    }
+
+    if (_resolvedCompanyId != null && _resolvedTerminalId != null) {
+      return (companyId: _resolvedCompanyId!, terminalId: _resolvedTerminalId!);
+    }
+
+    final hasEnvFallback = _companyId.trim().isNotEmpty && _terminalId.trim().isNotEmpty;
+    if (hasEnvFallback) {
+      return (companyId: _companyId.trim(), terminalId: _terminalId.trim());
+    }
+
+    throw const VerifactuApiException(
+      'No se pudo resolver companyId/terminalId del cliente para emitir. '
+      'Revisa suscripción Verifactu y alta de TPV en backend.',
+    );
+  }
+
   Map<String, String> get _authHeaders {
     return {'Authorization': 'Bearer $_accessToken', 'Accept': 'application/json'};
   }
 
   Map<String, String> get _jsonAuthHeaders {
     return {..._authHeaders, 'Content-Type': 'application/json'};
+  }
+
+  Future<void> _syncBusinessIdentity({String? companyName, String? taxId, String? address}) async {
+    final existing = await _configService.getBusinessConfig();
+    final business = existing ?? BusinessConfig();
+
+    final normalizedCompanyName = companyName?.trim();
+    final normalizedTaxId = taxId?.trim();
+    final normalizedAddress = address?.trim();
+
+    var changed = false;
+
+    if (normalizedCompanyName != null &&
+        normalizedCompanyName.isNotEmpty &&
+        business.businessName != normalizedCompanyName) {
+      business.businessName = normalizedCompanyName;
+      changed = true;
+    }
+
+    if (normalizedTaxId != null && normalizedTaxId.isNotEmpty && business.cifNif != normalizedTaxId) {
+      business.cifNif = normalizedTaxId;
+      changed = true;
+    }
+
+    if (normalizedAddress != null && normalizedAddress.isNotEmpty && business.address != normalizedAddress) {
+      business.address = normalizedAddress;
+      changed = true;
+    }
+
+    if (changed || existing == null) {
+      await _configService.saveBusinessConfig(business);
+    }
+  }
+
+  Future<Map<String, dynamic>?> _tryFetchCompanyPayload({required String clientId, String? companyId}) async {
+    final endpoints = <String>['/api/v1/verifactu/company/$clientId'];
+    final normalizedCompanyId = companyId?.trim();
+    if (normalizedCompanyId != null && normalizedCompanyId.isNotEmpty) {
+      endpoints.addAll([
+        '/api/v1/companies/$normalizedCompanyId',
+        '/api/v1/company/$normalizedCompanyId',
+        '/api/v1/verifactu/companies/$normalizedCompanyId',
+      ]);
+    }
+
+    VerifactuApiException? lastError;
+
+    for (final endpoint in endpoints) {
+      final response = await _httpClient.get(Uri.parse('$_baseUrl$endpoint'), headers: _authHeaders);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return decodeJsonObject(response.body);
+      }
+      if (response.statusCode == 404) {
+        continue;
+      }
+      lastError = VerifactuApiException(
+        'No se pudo leer datos de company en backend',
+        statusCode: response.statusCode,
+        responseBody: response.body,
+      );
+    }
+
+    if (lastError != null) {
+      throw lastError;
+    }
+
+    return null;
+  }
+
+  Map<String, dynamic> _extractCompanyMap(Map<String, dynamic> payload) {
+    final nested = payload['company'];
+    if (nested is Map<String, dynamic>) {
+      return nested;
+    }
+    if (nested is Map) {
+      return Map<String, dynamic>.from(nested);
+    }
+    return payload;
+  }
+
+  String? _firstNonBlankString(Map<String, dynamic> source, List<String> keys) {
+    for (final key in keys) {
+      final value = source[key];
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+    return null;
   }
 }

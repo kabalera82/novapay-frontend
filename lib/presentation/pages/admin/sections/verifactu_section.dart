@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../config/app_formats.dart';
 import '../../../../config/theme.dart';
+import '../../../../data/models/verifactu_models.dart';
 import '../../../controllers/verifactu_controller.dart';
 
 class VerifactuSection extends StatefulWidget {
@@ -37,6 +39,7 @@ class _VerifactuSectionState extends State<VerifactuSection> {
   bool _showLoginPassword = false;
   bool _showRegisterAccessForm = false;
   bool _autoRequestedSummary = false;
+  DateTime? _interactionDateFilter;
 
   @override
   void initState() {
@@ -109,6 +112,10 @@ class _VerifactuSectionState extends State<VerifactuSection> {
     return true;
   }
 
+  bool _isRetryableStatus(String status) {
+    return status == 'RECHAZADO' || status == 'ERROR_PERMANENTE';
+  }
+
   InputDecoration _fieldDecoration(String label, {String? helperText, Widget? suffixIcon}) {
     return InputDecoration(
       labelText: label,
@@ -142,6 +149,60 @@ class _VerifactuSectionState extends State<VerifactuSection> {
     final missing = _missingPasswordRules(value);
     if (missing.isEmpty) return null;
     return 'Te falta: ${missing.join(", ")}';
+  }
+
+  DateTime? _interactionTimestamp(FiscalInteraction item) {
+    final respondedAt = DateTime.tryParse(item.respondedAt ?? '');
+    if (respondedAt != null) {
+      return respondedAt;
+    }
+
+    final sentAt = DateTime.tryParse(item.sentAt ?? '');
+    if (sentAt != null) {
+      return sentAt;
+    }
+
+    final issueDate = DateTime.tryParse(item.issueDate);
+    return issueDate;
+  }
+
+  List<FiscalInteraction> _filteredInteractions(List<FiscalInteraction> items) {
+    final filtered = items.where((item) {
+      if (_interactionDateFilter == null) {
+        return true;
+      }
+      final parsedDate = _interactionTimestamp(item);
+      if (parsedDate == null) {
+        return false;
+      }
+      final filter = _interactionDateFilter!;
+      return parsedDate.year == filter.year && parsedDate.month == filter.month && parsedDate.day == filter.day;
+    }).toList();
+
+    filtered.sort((a, b) {
+      final timestampA = _interactionTimestamp(a) ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final timestampB = _interactionTimestamp(b) ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final comparison = timestampB.compareTo(timestampA);
+      if (comparison != 0) {
+        return comparison;
+      }
+
+      return b.invoiceNumber.compareTo(a.invoiceNumber);
+    });
+
+    return filtered;
+  }
+
+  Future<void> _pickInteractionDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _interactionDateFilter ?? DateTime.now(),
+      firstDate: DateTime(2024),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() => _interactionDateFilter = picked);
+    }
   }
 
   Widget _buildPasswordHint(ThemeData theme, String value) {
@@ -475,7 +536,7 @@ class _VerifactuSectionState extends State<VerifactuSection> {
                   runSpacing: 8,
                   children: [
                     FilledButton.icon(
-                      onPressed: _controller.isSubmitting.value ? null : _controller.refreshInteractions,
+                      onPressed: _controller.isSubmitting.value ? null : _controller.refreshStatus,
                       icon: const Icon(Icons.refresh),
                       label: const Text('Actualizar estado'),
                     ),
@@ -794,6 +855,7 @@ class _VerifactuSectionState extends State<VerifactuSection> {
                         }
                         _authEmailCtrl.text = _emailCtrl.text.trim();
                         _authPasswordCtrl.text = _passwordCtrl.text;
+
                         _controller.registerBackend(
                           companyName: _companyCtrl.text.trim(),
                           taxId: _taxIdCtrl.text.trim(),
@@ -969,75 +1031,141 @@ class _VerifactuSectionState extends State<VerifactuSection> {
       return Center(child: Text('Aún no hay interacciones enviadas al backend.', style: theme.textTheme.bodyMedium));
     }
 
-    return ListView.separated(
+    final interactions = _filteredInteractions(_controller.interactions.toList());
+    final retryableCount = interactions.where((item) => _isRetryableStatus(item.status)).length;
+
+    return ListView(
       padding: const EdgeInsets.all(12),
-      itemCount: _controller.interactions.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (_, index) {
-        final item = _controller.interactions[index];
-        final color = _statusColor(item.status);
-        return Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: AppTheme.border),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Factura ${item.invoiceSeries}-${item.invoiceNumber}',
-                        style: theme.textTheme.titleMedium,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        item.status,
-                        style: theme.textTheme.labelMedium?.copyWith(color: color, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ],
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ActionChip(
+              avatar: Icon(
+                _interactionDateFilter != null ? Icons.event : Icons.calendar_today,
+                size: 16,
+                color: _interactionDateFilter != null ? AppTheme.primary : AppTheme.textSecondary,
+              ),
+              label: Text(
+                _interactionDateFilter != null ? AppFormats.date.format(_interactionDateFilter!) : 'Filtrar por fecha',
+                style: TextStyle(
+                  color: _interactionDateFilter != null ? AppTheme.primary : AppTheme.textSecondary,
+                  fontWeight: _interactionDateFilter != null ? FontWeight.w600 : FontWeight.normal,
                 ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 6,
-                  children: [
-                    Text('Importe: ${_money.format(item.totalAmount)}'),
-                    Text('Issue date: ${item.issueDate}'),
-                    Text('Reintentos: ${item.retryCount}'),
-                    Text('Enviado: ${_formatDate(item.sentAt)}'),
-                    Text('Respuesta: ${_formatDate(item.respondedAt)}'),
-                  ],
-                ),
-                if (item.secureVerificationCode != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'CSV: ${item.secureVerificationCode}',
-                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                ],
-                if (item.responseDescription != null && item.responseDescription!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    item.responseDescription!,
-                    style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
-                  ),
-                ],
-              ],
+              ),
+              onPressed: _pickInteractionDate,
             ),
-          ),
-        );
-      },
+            if (_interactionDateFilter != null)
+              ActionChip(
+                avatar: const Icon(Icons.close, size: 16),
+                label: const Text('Limpiar fecha'),
+                onPressed: () => setState(() => _interactionDateFilter = null),
+              ),
+            ActionChip(
+              avatar: Icon(
+                Icons.refresh,
+                size: 16,
+                color: retryableCount > 0 ? AppTheme.error : AppTheme.textSecondary,
+              ),
+              label: Text('Reenviar rechazados ($retryableCount)'),
+              onPressed: (_controller.isSubmitting.value || retryableCount == 0)
+                  ? null
+                  : () => _controller.retryRejectedInteractions(interactions),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (interactions.isEmpty)
+          Center(child: Text('No hay facturas para estos filtros.', style: theme.textTheme.bodyMedium))
+        else
+          ...interactions.map((item) {
+            final color = _statusColor(item.status);
+            return Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: BorderSide(color: AppTheme.border),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Factura ${item.invoiceSeries}-${item.invoiceNumber}',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            item.status,
+                            style: theme.textTheme.labelMedium?.copyWith(color: color, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 6,
+                      children: [
+                        Text('Importe: ${_money.format(item.totalAmount)}'),
+                        Text('Issue date: ${item.issueDate}'),
+                        Text('Reintentos: ${item.retryCount}'),
+                        Text('Enviado: ${_formatDate(item.sentAt)}'),
+                        Text('Respuesta: ${_formatDate(item.respondedAt)}'),
+                      ],
+                    ),
+                    if (item.secureVerificationCode != null && !_isRetryableStatus(item.status)) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'CSV: ${item.secureVerificationCode}',
+                        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                    if (item.responseDescription != null && item.responseDescription!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _isRetryableStatus(item.status)
+                            ? 'Motivo rechazo: ${item.responseDescription!}'
+                            : item.responseDescription!,
+                        style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
+                      ),
+                    ],
+                    if (item.responseCode != null && item.responseCode!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _isRetryableStatus(item.status)
+                            ? 'Código rechazo: ${item.responseCode}'
+                            : 'Código AEAT: ${item.responseCode}',
+                        style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                    if (_isRetryableStatus(item.status)) ...[
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton.icon(
+                          onPressed: _controller.isSubmitting.value ? null : () => _controller.retryInteraction(item),
+                          icon: const Icon(Icons.restart_alt),
+                          label: const Text('Reenviar ticket'),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }),
+      ],
     );
   }
 

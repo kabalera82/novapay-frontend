@@ -35,30 +35,21 @@ class TicketService {
   }
 
   Future<List<Ticket>> getOpen() async {
-    return _isar.tickets
-        .filter()
-        .statusEqualTo(TicketStatus.abierto)
-        .findAll();
+    return _isar.tickets.filter().statusEqualTo(TicketStatus.abierto).sortByCreatedAtDesc().findAll();
   }
 
   Future<List<Ticket>> getParked() async {
-    return _isar.tickets
-        .filter()
-        .isParkedEqualTo(true)
-        .findAll();
+    return _isar.tickets.filter().isParkedEqualTo(true).sortByCreatedAtDesc().findAll();
   }
 
   Future<List<Ticket>> getByDate(DateTime date) async {
     final start = DateTime(date.year, date.month, date.day);
-    final end   = start.add(const Duration(days: 1));
-    return _isar.tickets
-        .filter()
-        .createdAtBetween(start, end)
-        .findAll();
+    final end = start.add(const Duration(days: 1));
+    return _isar.tickets.filter().createdAtBetween(start, end).sortByCreatedAtDesc().findAll();
   }
 
   Future<List<Ticket>> getAll() async {
-    return _isar.tickets.where().findAll();
+    return _isar.tickets.where().sortByCreatedAtDesc().findAll();
   }
 
   Future<void> addLine(Ticket ticket, TicketLine line) async {
@@ -66,8 +57,7 @@ class TicketService {
     final existing = lines.indexWhere((l) => l.productName == line.productName);
     if (existing >= 0) {
       lines[existing].quantity += line.quantity;
-      lines[existing].totalLine =
-          lines[existing].quantity * lines[existing].priceAtMoment;
+      lines[existing].totalLine = lines[existing].quantity * lines[existing].priceAtMoment;
     } else {
       lines.add(line);
     }
@@ -79,10 +69,8 @@ class TicketService {
   }
 
   Future<void> removeLine(Ticket ticket, String productName) async {
-    ticket.lines =
-        ticket.lines.where((l) => l.productName != productName).toList();
-    ticket.totalAmount =
-        ticket.lines.fold(0, (sum, l) => sum + l.totalLine);
+    ticket.lines = ticket.lines.where((l) => l.productName != productName).toList();
+    ticket.totalAmount = ticket.lines.fold(0, (sum, l) => sum + l.totalLine);
     await _isar.writeTxn(() async {
       await _isar.tickets.put(ticket);
     });
@@ -111,11 +99,7 @@ class TicketService {
     });
   }
 
-  Future<void> paySelectedLines(
-    Ticket ticket,
-    List<int> lineIndices,
-    PaymentMethod method,
-  ) async {
+  Future<void> paySelectedLines(Ticket ticket, List<int> lineIndices, PaymentMethod method) async {
     final paidLines = <TicketLine>[];
     final remaining = <TicketLine>[];
     for (int i = 0; i < ticket.lines.length; i++) {
@@ -128,13 +112,13 @@ class TicketService {
 
     if (remaining.isEmpty) {
       // Fully paid — keep lines intact for history, just change status
-      ticket.status        = TicketStatus.pagado;
+      ticket.status = TicketStatus.pagado;
       ticket.paymentMethod = method;
-      ticket.isParked      = false;
+      ticket.isParked = false;
       // ticket.lines and ticket.totalAmount stay as-is (full history preserved)
     } else {
       // Partial payment — remove paid lines, keep the rest
-      ticket.lines       = remaining;
+      ticket.lines = remaining;
       ticket.totalAmount = remaining.fold(0.0, (sum, l) => sum + l.totalLine);
     }
 
@@ -142,8 +126,7 @@ class TicketService {
     await _isar.writeTxn(() async {
       await _isar.tickets.put(ticket);
       for (final line in paidLines) {
-        final product =
-            allProducts.where((p) => p.name == line.productName).firstOrNull;
+        final product = allProducts.where((p) => p.name == line.productName).firstOrNull;
         if (product != null) {
           final isUnlimited = product.stock > 100 || product.stock < 0;
           if (!isUnlimited) {
@@ -155,11 +138,7 @@ class TicketService {
     });
   }
 
-  Future<void> updateLineQuantity(
-    Ticket ticket,
-    String productName,
-    int delta,
-  ) async {
+  Future<void> updateLineQuantity(Ticket ticket, String productName, int delta) async {
     final lines = List<TicketLine>.from(ticket.lines);
     final idx = lines.indexWhere((l) => l.productName == productName);
     if (idx < 0) return;
@@ -201,20 +180,16 @@ class TicketService {
   /// Mantiene únicamente las líneas seleccionadas como las lineas finales cobradas,
   /// recalcula el totalAmount y cierra el ticket como [pagado].
   /// NO descuenta stock (ya fue descontado en el cobro original).
-  Future<void> correctPayment(
-    Ticket ticket,
-    List<int> lineIndices,
-    PaymentMethod method,
-  ) async {
+  Future<void> correctPayment(Ticket ticket, List<int> lineIndices, PaymentMethod method) async {
     final finalLines = [
       for (int i = 0; i < ticket.lines.length; i++)
         if (lineIndices.contains(i)) ticket.lines[i],
     ];
-    ticket.lines        = finalLines;
-    ticket.totalAmount  = finalLines.fold(0.0, (sum, l) => sum + l.totalLine);
-    ticket.status       = TicketStatus.pagado;
+    ticket.lines = finalLines;
+    ticket.totalAmount = finalLines.fold(0.0, (sum, l) => sum + l.totalLine);
+    ticket.status = TicketStatus.pagado;
     ticket.paymentMethod = method;
-    ticket.isParked     = false;
+    ticket.isParked = false;
     await _isar.writeTxn(() async {
       await _isar.tickets.put(ticket);
     });

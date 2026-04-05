@@ -10,7 +10,9 @@ import 'package:image/image.dart' as img;
 import '../data/models/ticket.dart';
 import '../data/models/user.dart';
 import '../data/models/verifactu_models.dart';
+import '../data/models/business_config.dart';
 import '../presentation/controllers/auth_controller.dart';
+import 'config_service.dart';
 import 'user_service.dart';
 
 class ReceiptPrintService {
@@ -22,7 +24,7 @@ class ReceiptPrintService {
     'NOVAPAY_EMITTER_NAME',
     defaultValue: 'NOVAPAY DEMO S.L.',
   );
-  static const String _defaultEmitterNif = String.fromEnvironment('NOVAPAY_EMITTER_NIF', defaultValue: 'B33333333');
+  static const String _defaultEmitterNif = String.fromEnvironment('NOVAPAY_EMITTER_NIF', defaultValue: 'B3333333');
   static const String _defaultEmitterAddress = String.fromEnvironment(
     'NOVAPAY_EMITTER_ADDRESS',
     defaultValue: 'DOMICILIO PRUEBA, 123, CIUDAD',
@@ -30,10 +32,11 @@ class ReceiptPrintService {
   static const String _defaultTaxType = String.fromEnvironment('NOVAPAY_TAX_TYPE', defaultValue: 'IVA_REDUCIDO');
 
   final UserService _userService;
+  final ConfigService _configService;
   final DateFormat _dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
   final NumberFormat _money = NumberFormat.currency(locale: 'es_ES', symbol: '€');
 
-  ReceiptPrintService(this._userService);
+  ReceiptPrintService(this._userService, this._configService);
 
   Future<void> printTicket({
     required Ticket ticket,
@@ -45,19 +48,22 @@ class ReceiptPrintService {
     double? cashGiven,
     double? cashChange,
   }) async {
-    // Obtener datos del emisor: primero los parámetros, luego del admin, luego defaults
+    // Obtener datos del emisor: parámetros explícitos -> BusinessConfig -> admin -> defaults
     final adminUser = await _getAdminUser();
+    final businessConfig = await _getBusinessConfig();
 
-    final finalEmitterName = emitterName ?? adminUser?.companyName ?? _defaultEmitterName;
+    final finalEmitterName =
+        _firstNonBlank([emitterName, businessConfig?.businessName, adminUser?.companyName]) ?? _defaultEmitterName;
 
-    final finalEmitterNif = emitterNif ?? adminUser?.taxId ?? _defaultEmitterNif;
+    final finalEmitterNif =
+        _firstNonBlank([emitterNif, businessConfig?.cifNif, adminUser?.taxId]) ?? _defaultEmitterNif;
 
-    final finalEmitterAddress = emitterAddress ?? adminUser?.address ?? _defaultEmitterAddress;
+    final finalEmitterAddress =
+        _firstNonBlank([emitterAddress, businessConfig?.address, adminUser?.address]) ?? _defaultEmitterAddress;
     final attendedBy = _resolveAttendedBy();
     final tableLabel = _resolveTableLabel(ticket);
     final paymentLabel = _paymentMethodLabel(ticket.paymentMethod);
-    final backendEditable = adminUser?.backendEditable ?? false;
-    final logoImage = await _loadLogoForThermalPrint(adminUser?.logoPath);
+    final logoImage = await _loadLogoForThermalPrint(_firstNonBlank([businessConfig?.logoPath, adminUser?.logoPath]));
 
     final doc = pw.Document();
     final qrPayload = _resolveVerificationUrl(fiscalStatus);
@@ -184,18 +190,21 @@ class ReceiptPrintService {
               pw.SizedBox(height: 8),
               pw.Center(child: pw.Text('Gracias por su visita', style: boldStyle(fontSize: 11))),
               pw.SizedBox(height: 6),
-              // QRs footer
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.center,
-                children: [
-                  pw.BarcodeWidget(barcode: pw.Barcode.qrCode(), data: ticket.uuid, width: 70, height: 70),
-                  pw.SizedBox(width: 8),
-                  if (backendEditable && qrPayload != null)
-                    pw.BarcodeWidget(barcode: pw.Barcode.qrCode(), data: qrPayload, width: 70, height: 70),
-                ],
-              ),
-              pw.SizedBox(height: 2),
-              pw.Center(child: pw.Text('Identificador | Verificación', style: baseStyle(fontSize: 7))),
+              // El ticket fiscal debe mostrar el QR oficial de AEAT cuando existe aceptación.
+              if (qrPayload != null) ...[
+                pw.Center(
+                  child: pw.BarcodeWidget(barcode: pw.Barcode.qrCode(), data: qrPayload, width: 84, height: 84),
+                ),
+                pw.SizedBox(height: 2),
+                pw.Center(child: pw.Text('QR Verificación AEAT (oficial)', style: baseStyle(fontSize: 7))),
+              ] else ...[
+                pw.Center(
+                  child: pw.Text(
+                    'Sin QR AEAT (pendiente o rechazado)',
+                    style: baseStyle(fontSize: 8, color: PdfColors.red700),
+                  ),
+                ),
+              ],
               pw.SizedBox(height: 2),
               pw.Center(child: pw.Text('Estado fiscal: ${fiscalStatus?.status ?? 'PENDIENTE'}', style: baseStyle())),
             ],
@@ -239,6 +248,10 @@ class ReceiptPrintService {
       return null;
     }
 
+    if (fiscalStatus.status != 'ACEPTADO') {
+      return null;
+    }
+
     if (fiscalStatus.verificationUrl != null && fiscalStatus.verificationUrl!.isNotEmpty) {
       return fiscalStatus.verificationUrl;
     }
@@ -259,6 +272,23 @@ class ReceiptPrintService {
       // Si hay error, retorna null y usa valores por defecto
       return null;
     }
+  }
+
+  Future<BusinessConfig?> _getBusinessConfig() async {
+    try {
+      return await _configService.getBusinessConfig();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? _firstNonBlank(List<String?> values) {
+    for (final value in values) {
+      if (value != null && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+    return null;
   }
 
   String _resolveAttendedBy() {

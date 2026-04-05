@@ -12,6 +12,11 @@ import 'ticket_history_controller.dart';
 import 'verifactu_controller.dart';
 
 class TicketController extends GetxController {
+  static const bool _autoPrintAfterEmission = bool.fromEnvironment(
+    'NOVAPAY_AUTO_PRINT_AFTER_EMISSION',
+    defaultValue: true,
+  );
+
   final TicketService _service;
   final VerifactuService _verifactuService;
   final ReceiptPrintService _receiptPrintService;
@@ -113,6 +118,27 @@ class TicketController extends GetxController {
     }
   }
 
+  Future<void> reprintTicket(Ticket ticket) async {
+    try {
+      await _receiptPrintService.printTicket(
+        ticket: ticket,
+        invoice: BackendInvoiceResponse(
+          id: ticket.uuid,
+          series: 'TICKET',
+          number: ticket.id,
+          type: 'SIMPLIFICADA',
+          status: 'REIMPRESION',
+          issueDate: ticket.createdAt.toIso8601String(),
+          totalAmount: ticket.totalAmount,
+        ),
+        fiscalStatus: null,
+      );
+      Get.snackbar('Impresion', 'Ticket reimpreso correctamente.');
+    } catch (e) {
+      Get.snackbar('Impresion', 'No se pudo reimprimir el ticket: $e');
+    }
+  }
+
   Future<void> cancelActive() async {
     if (activeTicket.value == null) return;
     try {
@@ -186,36 +212,63 @@ class TicketController extends GetxController {
     );
 
     FiscalStatusResponse? fiscalStatus;
+    var shouldPrint = _autoPrintAfterEmission;
 
     try {
       final InvoiceEmissionResult emission = await _verifactuService.emitTicket(ticket);
       invoiceForPrint = emission.invoice;
       fiscalStatus = emission.fiscalStatus;
       Get.find<VerifactuController>().refreshInteractions();
-      Get.snackbar('Verifactu', 'Ticket fiscal enviado y preparado para imprimir.');
+      if (fiscalStatus == null) {
+        Get.snackbar('Verifactu', 'Ticket enviado al backend. Esperando respuesta fiscal de AEAT.');
+      } else if (fiscalStatus.status == 'ACEPTADO') {
+        final printMsg = shouldPrint ? ' Se imprimirá ticket.' : ' Impresión automática desactivada.';
+        Get.snackbar('Verifactu', 'Ticket aceptado por AEAT.$printMsg');
+      } else if (_isExpectedInvalidSignature(fiscalStatus)) {
+        Get.snackbar(
+          'Verifactu',
+          'AEAT rechazó la firma (esperado en entorno actual con certificado personal). '
+              'Ticket emitido sin QR oficial hasta disponer de certificado empresarial.',
+        );
+      } else {
+        final code = fiscalStatus.responseCode != null ? ' [${fiscalStatus.responseCode}]' : '';
+        final description = (fiscalStatus.responseDescription ?? '').trim();
+        final detail = description.isNotEmpty ? ': $description' : '';
+        Get.snackbar('Verifactu', 'Respuesta fiscal ${fiscalStatus.status}$code$detail');
+      }
     } catch (e) {
       if (e is VerifactuLocalModeException) {
         Get.snackbar('Verifactu', e.message);
       } else {
+        shouldPrint = false;
         final details = switch (e) {
           VerifactuApiException() => e.toString(),
           _ => e.toString(),
         };
-        Get.snackbar('Verifactu', 'Fallo envio fiscal. Se genera PDF local demo. $details');
+        Get.snackbar('Verifactu', 'Fallo envio fiscal. No se imprimirá automático. $details');
       }
     } finally {
-      try {
-        await _receiptPrintService.printTicket(
-          ticket: ticket,
-          invoice: invoiceForPrint,
-          fiscalStatus: fiscalStatus,
-          cashGiven: cashGiven,
-          cashChange: cashChange,
-        );
-      } catch (printError) {
-        Get.snackbar('Impresion', 'No se pudo abrir el PDF: $printError');
+      if (shouldPrint) {
+        try {
+          await _receiptPrintService.printTicket(
+            ticket: ticket,
+            invoice: invoiceForPrint,
+            fiscalStatus: fiscalStatus,
+            cashGiven: cashGiven,
+            cashChange: cashChange,
+          );
+        } catch (printError) {
+          Get.snackbar('Impresion', 'No se pudo abrir el PDF: $printError');
+        }
       }
     }
+  }
+
+  bool _isExpectedInvalidSignature(FiscalStatusResponse fiscalStatus) {
+    final description = (fiscalStatus.responseDescription ?? '').toLowerCase();
+    return fiscalStatus.status == 'RECHAZADO' &&
+        description.contains('firma') &&
+        (description.contains('inval') || description.contains('incorrect') || description.contains('no valida'));
   }
 
   Ticket _cloneTicket(Ticket source) {

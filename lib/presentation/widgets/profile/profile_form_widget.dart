@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 import '../../../data/models/user.dart';
+import '../../../data/models/business_config.dart';
 import '../../../services/config_service.dart';
 import '../../controllers/user_controller.dart';
 
@@ -34,6 +35,7 @@ class _ProfileFormWidgetState extends State<ProfileFormWidget> {
   late String? _logoPath; // Ruta del logo
   bool _hasLocalVerifactuLink = false;
   final ImagePicker _imagePicker = ImagePicker();
+  BusinessConfig? _businessConfig;
 
   @override
   void initState() {
@@ -47,7 +49,42 @@ class _ProfileFormWidgetState extends State<ProfileFormWidget> {
     _taxIdCtrl = TextEditingController(text: widget.user.taxId ?? '');
     _addressCtrl = TextEditingController(text: widget.user.address ?? '');
     _logoPath = widget.user.logoPath;
+    _loadBusinessData();
     _loadLocalVerifactuLock();
+  }
+
+  Future<void> _loadBusinessData() async {
+    if (!_showCompanyFields) {
+      return;
+    }
+
+    try {
+      final configService = Get.find<ConfigService>();
+      _businessConfig = await configService.getBusinessConfig();
+      final business = _businessConfig;
+      if (business == null) {
+        return;
+      }
+
+      if (business.businessName.trim().isNotEmpty) {
+        _companyNameCtrl.text = business.businessName;
+      }
+      if (business.cifNif.trim().isNotEmpty) {
+        _taxIdCtrl.text = business.cifNif;
+      }
+      if (business.address.trim().isNotEmpty) {
+        _addressCtrl.text = business.address;
+      }
+      if (business.logoPath != null && business.logoPath!.trim().isNotEmpty) {
+        _logoPath = business.logoPath;
+      }
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (_) {
+      // Si falla la carga, se mantienen valores del usuario admin como fallback.
+    }
   }
 
   @override
@@ -101,6 +138,16 @@ class _ProfileFormWidgetState extends State<ProfileFormWidget> {
         ..companyName = _companyNameCtrl.text.trim()
         ..taxId = _taxIdCtrl.text.trim()
         ..address = _addressCtrl.text.trim();
+
+      final configService = Get.find<ConfigService>();
+      final business = _businessConfig ?? (await configService.getBusinessConfig()) ?? BusinessConfig();
+      business
+        ..businessName = _companyNameCtrl.text.trim()
+        ..cifNif = _taxIdCtrl.text.trim()
+        ..address = _addressCtrl.text.trim()
+        ..logoPath = _logoPath;
+      await configService.saveBusinessConfig(business);
+      _businessConfig = business;
     }
     if (_showCompanyFields) {
       widget.user.logoPath = _logoPath;
