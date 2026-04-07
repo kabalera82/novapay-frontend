@@ -274,6 +274,14 @@ class VerifactuController extends GetxController {
   }
 
   bool canRetryInteraction(FiscalInteraction item) {
+    final remediable = canRemediateInteraction(item);
+    if (!remediable) {
+      return false;
+    }
+    return item.responseCode?.trim() != '3000';
+  }
+
+  bool canRemediateInteraction(FiscalInteraction item) {
     return item.status == 'RECHAZADO' || item.status == 'ERROR_PERMANENTE';
   }
 
@@ -330,7 +338,7 @@ class VerifactuController extends GetxController {
   }
 
   Future<void> remediateRejectedInteraction(FiscalInteraction item, {required String reason}) async {
-    if (!canRetryInteraction(item)) {
+    if (!canRemediateInteraction(item)) {
       Get.snackbar('Verifactu', 'Solo se puede subsanar tickets rechazados o con error permanente.');
       return;
     }

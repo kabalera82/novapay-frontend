@@ -112,8 +112,12 @@ class _VerifactuSectionState extends State<VerifactuSection> {
     return true;
   }
 
-  bool _isRetryableStatus(String status) {
+  bool _isRemediableStatus(String status) {
     return status == 'RECHAZADO' || status == 'ERROR_PERMANENTE';
+  }
+
+  bool _isRetryableInteraction(FiscalInteraction item) {
+    return _isRemediableStatus(item.status) && item.responseCode?.trim() != '3000';
   }
 
   InputDecoration _fieldDecoration(String label, {String? helperText, Widget? suffixIcon}) {
@@ -1113,7 +1117,7 @@ class _VerifactuSectionState extends State<VerifactuSection> {
     }
 
     final interactions = _filteredInteractions(_controller.interactions.toList());
-    final retryableCount = interactions.where((item) => _isRetryableStatus(item.status)).length;
+    final retryableCount = interactions.where(_isRetryableInteraction).length;
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -1227,7 +1231,7 @@ class _VerifactuSectionState extends State<VerifactuSection> {
                             .toList(),
                       ),
                     ],
-                    if (item.secureVerificationCode != null && !_isRetryableStatus(item.status)) ...[
+                    if (item.secureVerificationCode != null && !_isRemediableStatus(item.status)) ...[
                       const SizedBox(height: 8),
                       Text(
                         'CSV: ${item.secureVerificationCode}',
@@ -1237,7 +1241,7 @@ class _VerifactuSectionState extends State<VerifactuSection> {
                     if (item.responseDescription != null && item.responseDescription!.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
-                        _isRetryableStatus(item.status)
+                        _isRemediableStatus(item.status)
                             ? 'Motivo rechazo: ${item.responseDescription!}'
                             : item.responseDescription!,
                         style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
@@ -1246,13 +1250,13 @@ class _VerifactuSectionState extends State<VerifactuSection> {
                     if (item.responseCode != null && item.responseCode!.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
-                        _isRetryableStatus(item.status)
+                        _isRemediableStatus(item.status)
                             ? 'Código rechazo: ${item.responseCode}'
                             : 'Código AEAT: ${item.responseCode}',
                         style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
                       ),
                     ],
-                    if (_isRetryableStatus(item.status)) ...[
+                    if (_isRemediableStatus(item.status)) ...[
                       const SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -1262,12 +1266,16 @@ class _VerifactuSectionState extends State<VerifactuSection> {
                             icon: const Icon(Icons.rule_folder_outlined),
                             label: const Text('Subsanar (anular)'),
                           ),
-                          const SizedBox(width: 8),
-                          FilledButton.icon(
-                            onPressed: _controller.isSubmitting.value ? null : () => _controller.retryInteraction(item),
-                            icon: const Icon(Icons.restart_alt),
-                            label: const Text('Reenviar ticket'),
-                          ),
+                          if (_isRetryableInteraction(item)) ...[
+                            const SizedBox(width: 8),
+                            FilledButton.icon(
+                              onPressed: _controller.isSubmitting.value
+                                  ? null
+                                  : () => _controller.retryInteraction(item),
+                              icon: const Icon(Icons.restart_alt),
+                              label: const Text('Reenviar ticket'),
+                            ),
+                          ],
                         ],
                       ),
                     ],

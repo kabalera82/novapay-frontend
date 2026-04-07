@@ -15,6 +15,8 @@ import 'presentation/pages/user/user_shell_page.dart';
 import 'presentation/pages/profile_page.dart';
 import 'package:flutter/services.dart'; // Para controlar la orientación y el modo de pantalla
 
+const bool _resetOnStartForTests = bool.fromEnvironment('TEST_RESET_ON_START', defaultValue: false);
+
 void main() async {
   // Asegura que los bindings de Flutter estén inicializados
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +30,9 @@ void main() async {
   // Inicializa el servicio de base de datos y otros servicios necesarios antes de ejecutar la aplicación
   MediaKit.ensureInitialized();
   final isar = await openIsar();
-  await ConfigService(isar).factoryResetKeepingSeeds();
+  if (_resetOnStartForTests) {
+    await ConfigService(isar).factoryResetKeepingSeeds();
+  }
   runApp(MainApp(isar: isar));
 }
 

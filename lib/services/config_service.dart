@@ -19,14 +19,7 @@ class ConfigService {
   /// mínimas (usuario admin por defecto + catálogo inicial de productos).
   Future<void> factoryResetKeepingSeeds() async {
     await _isar.writeTxn(() async {
-      await _isar.fiscalTicketTraces.clear();
-      await _isar.expenses.clear();
-      await _isar.dailyReports.clear();
-      await _isar.tickets.clear();
-      await _isar.products.clear();
-      await _isar.users.clear();
-      await _isar.businessConfigs.clear();
-      await _isar.configs.clear();
+      await _isar.clear();
     });
 
     await UserService(_isar).seedAdmin();
