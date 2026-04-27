@@ -28,11 +28,22 @@ class _ProfileFormWidgetState extends State<ProfileFormWidget> {
   late final TextEditingController _phoneCtrl;
   late final TextEditingController _passwordCtrl;
   late final TextEditingController _emailCtrl;
+  late final TextEditingController _ticketDisplayNameCtrl;
+  late final TextEditingController _companyNameCtrl;
+  late final TextEditingController _fiscalNameCtrl;
+  late final TextEditingController _taxIdCtrl;
+  late final TextEditingController _addressCtrl;
+  late final ImagePicker _imagePicker;
   bool _saving = false;
+  bool _showPassword = false;
+  bool _hasLocalVerifactuLink = false;
+  String? _logoPath;
+  BusinessConfig? _businessConfig;
 
   @override
   void initState() {
     super.initState();
+    _imagePicker = ImagePicker();
     _usernameCtrl = TextEditingController(text: widget.user.username ?? '');
     _lastNameCtrl = TextEditingController(text: widget.user.lastName ?? '');
     _phoneCtrl = TextEditingController(text: widget.user.phone ?? '');
@@ -411,11 +422,9 @@ class _ProfileFormWidgetState extends State<ProfileFormWidget> {
                   child: ElevatedButton.icon(
                     icon: _saving
                         ? const SizedBox(
-                            width: 18, height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                         : const Icon(Icons.save_outlined),
                     label: const Text('Guardar cambios'),
@@ -435,17 +444,20 @@ class _ProfileFormWidgetState extends State<ProfileFormWidget> {
 
 class _SectionLabel extends StatelessWidget {
   final String label;
+  final ThemeData? theme;
 
-  const _SectionLabel({required this.label});
+  const _SectionLabel({required this.label, this.theme});
 
   @override
   Widget build(BuildContext context) {
+    final resolvedTheme = theme ?? Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Align(
           alignment: Alignment.centerLeft,
-          child: Text(label, style: Theme.of(context).textTheme.headlineSmall),
+          child: Text(label, style: resolvedTheme.textTheme.headlineSmall),
         ),
         const Divider(),
       ],

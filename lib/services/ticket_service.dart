@@ -35,6 +35,10 @@ class TicketService {
     return _isar.tickets.get(id);
   }
 
+  Future<Ticket?> getByUuid(String uuid) async {
+    return _isar.tickets.filter().uuidEqualTo(uuid).findFirst();
+  }
+
   /// Tickets activos NO aparcados (mesas abiertas en sala).
   Future<List<Ticket>> getOpen() async {
     return _isar.tickets
