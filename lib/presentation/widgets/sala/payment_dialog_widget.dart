@@ -8,14 +8,10 @@ import '../../../data/models/ticket.dart';
 /// Muestra el total, permite elegir método de pago y calcular el cambio en efectivo.
 /// No permite pago parcial por líneas.
 class PaymentDialogWidget extends StatefulWidget {
-  final double                          total;
+  final double total;
   final void Function(PaymentMethod method) onConfirm;
 
-  const PaymentDialogWidget({
-    super.key,
-    required this.total,
-    required this.onConfirm,
-  });
+  const PaymentDialogWidget({super.key, required this.total, required this.onConfirm});
 
   static Future<void> show(
     BuildContext context, {
@@ -23,7 +19,7 @@ class PaymentDialogWidget extends StatefulWidget {
     required void Function(PaymentMethod method) onConfirm,
   }) {
     return showDialog(
-      context:           context,
+      context: context,
       barrierDismissible: false,
       builder: (_) => PaymentDialogWidget(total: total, onConfirm: onConfirm),
     );
@@ -37,8 +33,8 @@ class _PaymentDialogWidgetState extends State<PaymentDialogWidget> {
   final _fmt = AppFormats.currency;
   final _cashCtrl = TextEditingController();
 
-  PaymentMethod _method    = PaymentMethod.efectivo;
-  double        _cashGiven = 0;
+  PaymentMethod _method = PaymentMethod.efectivo;
+  double _cashGiven = 0;
 
   @override
   void dispose() {
@@ -46,9 +42,7 @@ class _PaymentDialogWidgetState extends State<PaymentDialogWidget> {
     super.dispose();
   }
 
-  double get _change => _method == PaymentMethod.efectivo
-      ? (_cashGiven - widget.total).clamp(0, double.infinity)
-      : 0;
+  double get _change => _method == PaymentMethod.efectivo ? (_cashGiven - widget.total).clamp(0, double.infinity) : 0;
 
   bool get _canConfirm {
     if (_method == PaymentMethod.efectivo) return _cashGiven >= widget.total;
@@ -65,30 +59,28 @@ class _PaymentDialogWidgetState extends State<PaymentDialogWidget> {
       content: SizedBox(
         width: 340,
         child: Column(
-          mainAxisSize:      MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Total ──────────────────────────────────────────────────────
             Container(
-              width:   double.infinity,
+              width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color:        theme.colorScheme.primaryContainer,
+                color: theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(
                 children: [
                   Text(
                     'Total a cobrar',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
+                    style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onPrimaryContainer),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _fmt.format(widget.total),
                     style: theme.textTheme.displaySmall?.copyWith(
-                      color:      theme.colorScheme.onPrimaryContainer,
+                      color: theme.colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -134,16 +126,13 @@ class _PaymentDialogWidgetState extends State<PaymentDialogWidget> {
             if (_method == PaymentMethod.efectivo) ...[
               const SizedBox(height: 14),
               TextField(
-                controller:   _cashCtrl,
-                autofocus:    true,
+                controller: _cashCtrl,
+                autofocus: true,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration:   const InputDecoration(
-                  labelText:  'Cliente entrega (€)',
+                decoration: const InputDecoration(
+                  labelText: 'Cliente entrega (€)',
                   prefixIcon: Icon(Icons.euro),
-                  isDense:    true,
-                ),
-                onChanged: (v) => setState(
-                  () => _cashGiven = double.tryParse(v.replaceAll(',', '.')) ?? 0,
+                  isDense: true,
                 ),
                 onChanged: (v) => setState(() => _cashGiven = double.tryParse(v.replaceAll(',', '.')) ?? 0),
               ),
@@ -155,9 +144,7 @@ class _PaymentDialogWidgetState extends State<PaymentDialogWidget> {
                   Text(
                     _fmt.format(_change),
                     style: theme.textTheme.headlineSmall?.copyWith(
-                      color:      _change >= 0
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.error,
+                      color: _change >= 0 ? theme.colorScheme.primary : theme.colorScheme.error,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -170,10 +157,7 @@ class _PaymentDialogWidgetState extends State<PaymentDialogWidget> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child:     const Text('Cancelar'),
-        ),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
         ElevatedButton(
           onPressed: _canConfirm
               ? () {
@@ -206,38 +190,26 @@ class _MethodButton extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration:  const Duration(milliseconds: 150),
-          padding:   const EdgeInsets.symmetric(vertical: 10),
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color:        selected
-                ? theme.colorScheme.primaryContainer
-                : theme.colorScheme.surfaceContainerHighest,
+            color: selected ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
-            border:       selected
-                ? Border.all(color: theme.colorScheme.primary, width: 1.5)
-                : null,
+            border: selected ? Border.all(color: theme.colorScheme.primary, width: 1.5) : null,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size:  20,
-                color: selected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
+              Icon(icon, size: 20, color: selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant),
               const SizedBox(height: 2),
               Text(
                 label,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color:      selected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
+                  color: selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),

@@ -126,17 +126,19 @@ class TicketController extends GetxController {
     }
   }
 
-  Future<void> payLines(
-    List<int> lineIndices,
-    PaymentMethod method, {
-    Map<int, int>? partialQtys,
-  }) async {
+  Future<void> payLines(List<int> lineIndices, PaymentMethod method, {Map<int, int>? partialQtys}) async {
     if (activeTicket.value == null) return;
     try {
-      await _service.paySelectedLines(
-        activeTicket.value!, lineIndices, method,
-        partialQtys: partialQtys,
-      );
+      final ticketForReceipt = _cloneTicket(activeTicket.value!);
+      final isFullPayment =
+          lineIndices.length == ticketForReceipt.lines.length &&
+          lineIndices.every((index) {
+            final line = ticketForReceipt.lines[index];
+            final qtyToPay = partialQtys?[index] ?? line.quantity;
+            return qtyToPay >= line.quantity;
+          });
+
+      await _service.paySelectedLines(activeTicket.value!, lineIndices, method, partialQtys: partialQtys);
       final updated = await _service.getById(activeTicket.value!.id);
       if (updated == null || updated.status == TicketStatus.pagado) {
         activeTicket.value = null;
@@ -148,11 +150,49 @@ class TicketController extends GetxController {
       Get.find<ProductController>().loadAll();
       Get.find<ReportController>().loadLiveStats();
       Get.find<TicketHistoryController>().loadAll();
+
       if (isFullPayment) {
-        await _emitAndPrint(ticketForReceipt, cashGiven: cashGiven, cashChange: cashChange);
+        await _emitAndPrint(ticketForReceipt);
       }
     } catch (e) {
       Get.snackbar('Error', 'No se pudo procesar el pago');
+    }
+  }
+
+  Future<void> reprintTicket(Ticket ticket) async {
+    try {
+      final ticketToPrint = await _service.getById(ticket.id) ?? ticket;
+      final trace = await _fiscalTraceService.getByTicketUuid(ticketToPrint.uuid);
+      final ticketForPrint = _buildTicketForReprint(ticketToPrint, trace);
+
+      final invoice = trace != null
+          ? BackendInvoiceResponse(
+              id: trace.invoiceId,
+              series: trace.invoiceSeries,
+              number: trace.invoiceNumber,
+              type: 'SIMPLIFICADA',
+              status: trace.printedFiscalStatus ?? trace.fiscalStatus ?? 'PENDIENTE',
+              issueDate: trace.createdAt.toIso8601String(),
+              totalAmount: trace.totalAmount,
+            )
+          : BackendInvoiceResponse(
+              id: ticketForPrint.uuid,
+              series: 'REIMP',
+              number: ticketForPrint.id,
+              type: 'SIMPLIFICADA',
+              status: ticketForPrint.status.name.toUpperCase(),
+              issueDate: ticketForPrint.createdAt.toIso8601String(),
+              totalAmount: ticketForPrint.totalAmount,
+            );
+
+      await _receiptPrintService.printTicket(
+        ticket: ticketForPrint,
+        invoice: invoice,
+        fiscalStatus: trace == null ? null : _fiscalStatusFromTrace(trace),
+        provisionalQrPayload: trace?.printedQrPayload,
+      );
+    } catch (e) {
+      Get.snackbar('Impresion', 'No se pudo reimprimir el ticket');
     }
   }
 

@@ -45,6 +45,9 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final authCtrl = Get.find<AuthController>();
+    final isAndroid = Theme.of(context).platform == TargetPlatform.android;
+    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+    final hideLogo = isAndroid && keyboardOpen;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Bienvenido a NovaPay')),
@@ -56,11 +59,13 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 80, maxHeight: 260, minWidth: 80, maxWidth: 360),
-                  child: Image.asset('assets/images/novapay.webp', fit: BoxFit.contain),
-                ),
-                const SizedBox(height: 32),
+                if (!hideLogo) ...[
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 80, maxHeight: 260, minWidth: 80, maxWidth: 360),
+                    child: Image.asset('assets/images/novapay.webp', fit: BoxFit.contain),
+                  ),
+                  const SizedBox(height: 32),
+                ],
                 TextField(
                   controller: _userCtrl,
                   decoration: const InputDecoration(labelText: 'Usuario o Email'),
