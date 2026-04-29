@@ -51,7 +51,11 @@ class _LoginPageState extends State<LoginPage> {
     final hideLogo = isAndroid && keyboardOpen;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bienvenido a NovaPay')),
+      primary: false,
+      appBar: AppBar(
+        primary: false,
+        title: const Text('Bienvenido a NovaPay'),
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 400),

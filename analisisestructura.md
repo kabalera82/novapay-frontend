@@ -26,3 +26,64 @@ Capa de Datos (Local NoSQL).
 	Implementada con Isar Database (Isar, s.f.), se encarga de la persistencia local de alto rendimiento. El esquema define 9 colecciones anotadas con @collection (User, Product, Ticket, DailyReport, Config, BusinessConfig, Expense, FiscalTicketTrace y VerifactuModels) y 2 tipos embebidos con @embedded (TicketLine que almacena las líneas dentro de cada Ticket sin colección propia, y FiscalTicketTraceLine que almacena las líneas dentro de los registros de trazas fiscales). Se utilizan 4 enumeraciones persistidas: TicketStatus (abierto/pagado/cancelado), PaymentMethod (efectivo/tarjeta/mixto), TaxRate (exento/superreducido/reducido/general) y ExpenseCategory (compras/facturas/personal/otro). Los índices @Index sobre los campos críticos — createdAt y status en Ticket, date en DailyReport, email (unique) en User, invoiceId en FiscalTicketTrace — garantizan filtros nativos sin cargar colecciones completas en memoria. La instancia Isar se abre como singleton en main.dart mediante openIsar() y se inyecta a todos los servicios y controladores a través de AppBindings, que los registra como permanentes con Get.put(..., permanent: true).
 Flujo reactivo completo. 
 	El usuario interactúa con un Widget → el Controller invoca el método correspondiente del Service → el Service ejecuta la query Isar dentro de writeTxn() → el Controller actualiza la variable observable → Obx() reconstruye exclusivamente el widget afectado. Los errores se capturan en loques try/catch dentro de cada método del Controller y se notifican al usuario mediante Get.snackbar(), garantizando que el flag isLoading se restablece siempre a false en el bloque finally. Los datos de inicialización (usuario admin, 20 productos de demostración y configuración base) se cargan mediante funciones seed ejecutadas en main() antes de runApp().
+
+## 2. CONFIGURACIÓN PANTALLA COMPLETA (MODO INMERSIVO REAL)
+Para garantizar que la aplicación ocupe el 100% de la pantalla física en tablets (especialmente Xiaomi/MIUI) sin franjas de 30px o "huecos" reservados para la barra de estado, se han aplicado los siguientes cambios:
+
+### A. Configuración Nativa de Android (`android/app/src/main/res/values/styles.xml`)
+Se debe forzar al sistema a permitir que la ventana use el área de "recorte" (notch/sensores):
+```xml
+<style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+    <item name="android:windowBackground">?android:colorBackground</item>
+    <!-- Fuerza el uso de los bordes cortos (notch) para pantalla completa real -->
+    <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+</style>
+```
+
+### B. Inicialización en `main.dart`
+Configurar la transparencia de la barra y el modo inmersivo antes de `runApp`:
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Transparencia total de la barra de estado
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+  ));
+  
+  // Modo inmersivo "pegajoso"
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  
+  // Bloqueo de orientación
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight
+  ]);
+
+  runApp(MainApp());
+}
+```
+
+### C. Ajuste de Widgets (Scaffold y AppBar)
+Para recuperar los ~30 píxeles que Flutter reserva por defecto, hay que desactivar la propiedad `primary` en **ambos** componentes:
+```dart
+Scaffold(
+  primary: false, // Evita que el Scaffold reserve espacio arriba
+  appBar: AppBar(
+    primary: false, // Evita que el AppBar reserve espacio para la barra de estado
+    title: Text('Título'),
+  ),
+  body: ...
+)
+```
+
+### D. Comandos ADB (Específico para Xiaomi/MIUI)
+Si las ventanas flotantes o "handles" de MIUI molestan el diseño, ejecutar estos comandos con la tablet conectada:
+```powershell
+# Desactivar soporte de ventanas flotantes
+adb shell settings put global enable_freeform_support 0
+# Ocultar guías visuales de forma libre
+adb shell settings put secure show_guide_freeform 0
+# Deshabilitar el componente de ventanas flotantes de MIUI
+adb shell pm uninstall -k --user 0 com.miui.freeform
+```
