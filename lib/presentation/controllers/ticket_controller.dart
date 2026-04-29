@@ -129,16 +129,8 @@ class TicketController extends GetxController {
   Future<void> payLines(List<int> lineIndices, PaymentMethod method, {Map<int, int>? partialQtys}) async {
     if (activeTicket.value == null) return;
     try {
-      final ticketForReceipt = _cloneTicket(activeTicket.value!);
-      final isFullPayment =
-          lineIndices.length == ticketForReceipt.lines.length &&
-          lineIndices.every((index) {
-            final line = ticketForReceipt.lines[index];
-            final qtyToPay = partialQtys?[index] ?? line.quantity;
-            return qtyToPay >= line.quantity;
-          });
-
-      await _service.paySelectedLines(activeTicket.value!, lineIndices, method, partialQtys: partialQtys);
+      final paidTicket = await _service.paySelectedLines(activeTicket.value!, lineIndices, method, partialQtys: partialQtys);
+      
       final updated = await _service.getById(activeTicket.value!.id);
       if (updated == null || updated.status == TicketStatus.pagado) {
         activeTicket.value = null;
@@ -146,14 +138,14 @@ class TicketController extends GetxController {
         activeTicket.value = updated;
       }
       await loadTickets();
+      
       // Refresh product stock, live balance and ticket history after payment
       Get.find<ProductController>().loadAll();
       Get.find<ReportController>().loadLiveStats();
       Get.find<TicketHistoryController>().loadAll();
 
-      if (isFullPayment) {
-        await _emitAndPrint(ticketForReceipt);
-      }
+      // Emitir y imprimir el tiquet cobrado (sea parcial o total)
+      await _emitAndPrint(paidTicket);
     } catch (e) {
       Get.snackbar('Error', 'No se pudo procesar el pago');
     }

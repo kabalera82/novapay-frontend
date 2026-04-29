@@ -140,7 +140,7 @@ class TicketService {
   /// [partialQtys] permite indicar cuántas unidades se pagan por línea
   /// (clave = índice de línea, valor = cantidad a pagar).
   /// Si no se especifica para una línea, se paga la cantidad completa.
-  Future<void> paySelectedLines(
+  Future<Ticket> paySelectedLines(
     Ticket ticket,
     List<int> lineIndices,
     PaymentMethod method, {
@@ -205,6 +205,7 @@ class TicketService {
           await _isar.products.put(p);
         }
       });
+      return ticket;
     } else {
       // ── Pago PARCIAL ──────────────────────────────────────────────────────
       // Se crea un ticket cerrado con las líneas cobradas como registro
@@ -235,6 +236,7 @@ class TicketService {
           await _isar.products.put(p);
         }
       });
+      return paymentRecord;
     }
   }
 

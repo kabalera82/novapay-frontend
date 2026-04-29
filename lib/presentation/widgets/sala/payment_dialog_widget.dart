@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../config/app_formats.dart';
 import '../../../data/models/ticket.dart';
+import '../common/app_text_field.dart';
 
 /// Diálogo de cobro simplificado.
 /// Muestra el total, permite elegir método de pago y calcular el cambio en efectivo.
@@ -125,9 +126,9 @@ class _PaymentDialogWidgetState extends State<PaymentDialogWidget> {
             // ── Efectivo: importe entregado y cambio ───────────────────────
             if (_method == PaymentMethod.efectivo) ...[
               const SizedBox(height: 14),
-              TextField(
+              AppTextField(
                 controller: _cashCtrl,
-                autofocus: true,
+                hintText: 'Cliente entrega (€)',
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(
                   labelText: 'Cliente entrega (€)',

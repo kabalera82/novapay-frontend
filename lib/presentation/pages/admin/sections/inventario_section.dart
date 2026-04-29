@@ -9,6 +9,7 @@ import '../../../controllers/product_controller.dart';
 import '../../../widgets/common/confirm_delete_dialog.dart';
 import '../../../widgets/common/filter_chip_button.dart';
 import '../../../widgets/common/section_header.dart';
+import '../../../widgets/common/app_text_field.dart';
 import '../../../widgets/inventario/product_form_sheet.dart';
 import '../../../widgets/inventario/product_tile.dart';
 import '../../../widgets/inventario/stat_badge.dart';
@@ -21,7 +22,7 @@ class InventarioSection extends StatefulWidget {
 }
 
 class _InventarioSectionState extends State<InventarioSection> {
-  final _ctrl       = Get.find<ProductController>();
+  final _ctrl = Get.find<ProductController>();
   final _searchCtrl = TextEditingController();
 
   @override
@@ -34,9 +35,7 @@ class _InventarioSectionState extends State<InventarioSection> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => ProductFormSheet(
         product: product,
         onSave: (p) async {
@@ -51,11 +50,7 @@ class _InventarioSectionState extends State<InventarioSection> {
   }
 
   Future<void> _confirmDelete(Product p) async {
-    final ok = await ConfirmDeleteDialog.show(
-      context,
-      title:   'Eliminar producto',
-      message: '¿Eliminar "${p.name}"?',
-    );
+    final ok = await ConfirmDeleteDialog.show(context, title: 'Eliminar producto', message: '¿Eliminar "${p.name}"?');
     if (ok) await _ctrl.remove(p.id);
   }
 
@@ -67,19 +62,20 @@ class _InventarioSectionState extends State<InventarioSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title:     'Inventario',
+          title: 'Inventario',
           onRefresh: _ctrl.loadAll,
           trailing: ElevatedButton.icon(
-            icon:      const Icon(Icons.add, size: 18),
-            label:     const Text('Nuevo'),
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Nuevo'),
             onPressed: () => _openForm(),
           ),
         ),
 
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: TextField(
+          child: AppTextField(
             controller: _searchCtrl,
+            hintText: 'Buscar producto…',
             decoration: const InputDecoration(
               hintText: 'Buscar producto…',
               prefixIcon: Icon(Icons.search),
@@ -91,6 +87,8 @@ class _InventarioSectionState extends State<InventarioSection> {
 
         Obx(() {
           final cats = _ctrl.categories.toList();
+          final selectedCat = _ctrl.selectedCategory.value;
+
           return SizedBox(
             height: 44,
             child: ListView.separated(
@@ -99,21 +97,16 @@ class _InventarioSectionState extends State<InventarioSection> {
               itemCount: cats.length,
               separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (_, i) {
-                final cat      = cats[i];
-                final selected = _ctrl.selectedCategory.value == cat ||
-                    (cat == 'Todos' && _ctrl.selectedCategory.value.isEmpty);
-                return FilterChipButton(
-                  label:    cat,
-                  selected: selected,
-                  onTap:    () => _ctrl.applyFilter(cat),
-                );
+                final cat = cats[i];
+                final selected = selectedCat == cat || (cat == 'Todos' && selectedCat.isEmpty);
+                return FilterChipButton(label: cat, selected: selected, onTap: () => _ctrl.applyFilter(cat));
               },
             ),
           );
         }),
 
         Obx(() {
-          final all      = _ctrl.products.toList();
+          final all = _ctrl.products.toList();
           final lowStock = all.where((p) => p.stock > 0 && p.stock < 5).length;
           final outStock = all.where((p) => p.stock == 0).length;
           return Padding(
@@ -123,7 +116,7 @@ class _InventarioSectionState extends State<InventarioSection> {
               children: [
                 StatBadge('${all.length} productos', AppTheme.primary),
                 if (lowStock > 0) StatBadge('$lowStock stock bajo', AppTheme.warning),
-                if (outStock > 0) StatBadge('$outStock agotados',   AppTheme.error),
+                if (outStock > 0) StatBadge('$outStock agotados', AppTheme.error),
               ],
             ),
           );
@@ -138,8 +131,7 @@ class _InventarioSectionState extends State<InventarioSection> {
               return Center(
                 child: Text(
                   'Sin productos',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: AppTheme.textSecondary),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
                 ),
               );
             }
@@ -150,8 +142,8 @@ class _InventarioSectionState extends State<InventarioSection> {
               itemBuilder: (_, i) {
                 final p = list[i];
                 return ProductTile(
-                  product:  p,
-                  onTap:    () => _openForm(product: p),
+                  product: p,
+                  onTap: () => _openForm(product: p),
                   onDelete: () => _confirmDelete(p),
                   onStockChange: (delta) async {
                     p.stock = (p.stock + delta).clamp(0, 999999);

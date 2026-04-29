@@ -36,6 +36,13 @@ class ReceiptPrintService {
   final DateFormat _dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
   final NumberFormat _money = NumberFormat.currency(locale: 'es_ES', symbol: '€');
 
+  String _fmtMoney(double value) {
+    // Some devices/fonts may not support narrow or non-breaking spaces
+    // that NumberFormat inserts (U+202F or U+00A0). Replace them with
+    // a normal space so the euro symbol renders reliably on all devices.
+    return _money.format(value).replaceAll('\u202f', ' ').replaceAll('\u00a0', ' ');
+  }
+
   ReceiptPrintService(this._userService, this._configService);
 
   Future<void> printTicket({
@@ -134,7 +141,7 @@ class ReceiptPrintService {
                         flex: 2,
                         child: pw.Align(
                           alignment: pw.Alignment.centerRight,
-                          child: pw.Text(_money.format(line.totalLine), style: baseStyle()),
+                          child: pw.Text(_fmtMoney(line.totalLine), style: baseStyle()),
                         ),
                       ),
                     ],
@@ -146,14 +153,14 @@ class ReceiptPrintService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('Base imponible', style: baseStyle()),
-                  pw.Text(_money.format(totals.baseAmount), style: baseStyle()),
+                  pw.Text(_fmtMoney(totals.baseAmount), style: baseStyle()),
                 ],
               ),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('IVA ${taxInfo.ratePercent.toStringAsFixed(0)}% (${taxInfo.label})', style: baseStyle()),
-                  pw.Text(_money.format(totals.taxAmount), style: baseStyle()),
+                  pw.Text(_fmtMoney(totals.taxAmount), style: baseStyle()),
                 ],
               ),
               pw.SizedBox(height: 6), // Espacio antes del total
@@ -161,7 +168,7 @@ class ReceiptPrintService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('TOTAL (IVA incluido)', style: boldStyle()),
-                  pw.Text(_money.format(ticket.totalAmount), style: boldStyle()),
+                  pw.Text(_fmtMoney(ticket.totalAmount), style: boldStyle()),
                 ],
               ),
               if (ticket.paymentMethod == PaymentMethod.efectivo && cashGiven != null) ...[
@@ -170,14 +177,14 @@ class ReceiptPrintService {
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text('Cliente entrega', style: baseStyle()),
-                    pw.Text(_money.format(cashGiven), style: baseStyle()),
+                    pw.Text(_fmtMoney(cashGiven), style: baseStyle()),
                   ],
                 ),
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text('Cambio', style: baseStyle()),
-                    pw.Text(_money.format(cashChange ?? 0), style: baseStyle()),
+                    pw.Text(_fmtMoney(cashChange ?? 0), style: baseStyle()),
                   ],
                 ),
               ],

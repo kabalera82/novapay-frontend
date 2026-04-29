@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../controllers/auth_controller.dart';
 import '../../config/app_routes.dart';
+import '../widgets/common/app_text_field.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -66,12 +67,13 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 32),
                 ],
-                TextField(
+                AppTextField(
                   controller: _userCtrl,
+                  hintText: 'Usuario o Email',
                   decoration: const InputDecoration(labelText: 'Usuario o Email'),
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppTextField(
                   controller: _passCtrl,
                   obscureText: !_showPassword,
                   decoration: InputDecoration(
