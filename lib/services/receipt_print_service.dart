@@ -188,6 +188,23 @@ class ReceiptPrintService {
                   ],
                 ),
               ],
+              if (ticket.paymentMethod == PaymentMethod.mixto) ...[
+                pw.SizedBox(height: 4),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Pago en efectivo', style: baseStyle()),
+                    pw.Text(_fmtMoney(ticket.mixedCashAmount), style: baseStyle()),
+                  ],
+                ),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Pago con tarjeta', style: baseStyle()),
+                    pw.Text(_fmtMoney(ticket.mixedCardAmount), style: baseStyle()),
+                  ],
+                ),
+              ],
               if (fiscalStatus?.secureVerificationCode != null) ...[
                 pw.SizedBox(height: 8),
                 pw.Text('CSV: ${fiscalStatus!.secureVerificationCode}', style: baseStyle(fontSize: 8)),

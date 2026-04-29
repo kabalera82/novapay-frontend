@@ -23,6 +23,8 @@ class Ticket {
   PaymentMethod paymentMethod = PaymentMethod.efectivo;
 
   double totalAmount = 0;
+  double mixedCashAmount = 0;
+  double mixedCardAmount = 0;
   int?   tableNumber;
   String? tableOrLabel;
 

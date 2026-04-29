@@ -61,8 +61,8 @@ class ReportService {
       } else if (ticket.paymentMethod == PaymentMethod.tarjeta) {
         totalCard += ticket.totalAmount;
       } else {
-        totalCash += ticket.totalAmount / 2;
-        totalCard += ticket.totalAmount / 2;
+        totalCash += ticket.mixedCashAmount;
+        totalCard += ticket.mixedCardAmount;
       }
       for (final line in ticket.lines) {
         productCount[line.productName] = (productCount[line.productName] ?? 0) + line.quantity;

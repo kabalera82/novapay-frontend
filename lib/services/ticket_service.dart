@@ -145,6 +145,8 @@ class TicketService {
     List<int> lineIndices,
     PaymentMethod method, {
     Map<int, int>? partialQtys,
+    double mixedCashAmount = 0,
+    double mixedCardAmount = 0,
   }) async {
     final paidLines = <TicketLine>[];
     final remaining = <TicketLine>[];
@@ -191,9 +193,11 @@ class TicketService {
     if (remaining.isEmpty) {
       // ── Pago TOTAL ────────────────────────────────────────────────────────
       // El ticket original queda como registro histórico completo.
-      ticket.status        = TicketStatus.pagado;
-      ticket.paymentMethod = method;
-      ticket.isParked      = false;
+      ticket.status          = TicketStatus.pagado;
+      ticket.paymentMethod   = method;
+      ticket.mixedCashAmount = mixedCashAmount;
+      ticket.mixedCardAmount = mixedCardAmount;
+      ticket.isParked        = false;
       // ticket.lines y totalAmount se mantienen (historial íntegro)
 
       await _isar.writeTxn(() async {
@@ -216,6 +220,8 @@ class TicketService {
         ..createdAt          = DateTime.now()
         ..status             = TicketStatus.pagado
         ..paymentMethod      = method
+        ..mixedCashAmount    = mixedCashAmount
+        ..mixedCardAmount    = mixedCardAmount
         ..tableNumber        = ticket.tableNumber
         ..zone               = ticket.zone
         ..tableOrLabel       = ticket.tableOrLabel
@@ -292,7 +298,13 @@ class TicketService {
   /// Mantiene únicamente las líneas seleccionadas como las lineas finales cobradas,
   /// recalcula el totalAmount y cierra el ticket como [pagado].
   /// NO descuenta stock (ya fue descontado en el cobro original).
-  Future<void> correctPayment(Ticket ticket, List<int> lineIndices, PaymentMethod method) async {
+  Future<void> correctPayment(
+    Ticket ticket,
+    List<int> lineIndices,
+    PaymentMethod method, {
+    double mixedCashAmount = 0,
+    double mixedCardAmount = 0,
+  }) async {
     final finalLines = [
       for (int i = 0; i < ticket.lines.length; i++)
         if (lineIndices.contains(i)) ticket.lines[i],
@@ -301,6 +313,8 @@ class TicketService {
     ticket.totalAmount = finalLines.fold(0.0, (sum, l) => sum + l.totalLine);
     ticket.status = TicketStatus.pagado;
     ticket.paymentMethod = method;
+    ticket.mixedCashAmount = mixedCashAmount;
+    ticket.mixedCardAmount = mixedCardAmount;
     ticket.isParked = false;
     await _isar.writeTxn(() async {
       await _isar.tickets.put(ticket);

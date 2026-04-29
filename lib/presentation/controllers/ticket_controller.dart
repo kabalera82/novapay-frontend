@@ -126,10 +126,17 @@ class TicketController extends GetxController {
     }
   }
 
-  Future<void> payLines(List<int> lineIndices, PaymentMethod method, {Map<int, int>? partialQtys}) async {
+  Future<void> payLines(List<int> lineIndices, PaymentMethod method, {Map<int, int>? partialQtys, double mixedCashAmount = 0, double mixedCardAmount = 0}) async {
     if (activeTicket.value == null) return;
     try {
-      final paidTicket = await _service.paySelectedLines(activeTicket.value!, lineIndices, method, partialQtys: partialQtys);
+      final paidTicket = await _service.paySelectedLines(
+        activeTicket.value!,
+        lineIndices,
+        method,
+        partialQtys: partialQtys,
+        mixedCashAmount: mixedCashAmount,
+        mixedCardAmount: mixedCardAmount,
+      );
       
       final updated = await _service.getById(activeTicket.value!.id);
       if (updated == null || updated.status == TicketStatus.pagado) {

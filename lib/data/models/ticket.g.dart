@@ -33,45 +33,55 @@ const TicketSchema = CollectionSchema(
       type: IsarType.objectList,
       target: r'TicketLine',
     ),
-    r'parentTicketUuid': PropertySchema(
+    r'mixedCardAmount': PropertySchema(
       id: 3,
+      name: r'mixedCardAmount',
+      type: IsarType.double,
+    ),
+    r'mixedCashAmount': PropertySchema(
+      id: 4,
+      name: r'mixedCashAmount',
+      type: IsarType.double,
+    ),
+    r'parentTicketUuid': PropertySchema(
+      id: 5,
       name: r'parentTicketUuid',
       type: IsarType.string,
     ),
     r'paymentMethod': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'paymentMethod',
       type: IsarType.byte,
       enumMap: _TicketpaymentMethodEnumValueMap,
     ),
     r'status': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'status',
       type: IsarType.byte,
       enumMap: _TicketstatusEnumValueMap,
     ),
     r'tableNumber': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'tableNumber',
       type: IsarType.long,
     ),
     r'tableOrLabel': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'tableOrLabel',
       type: IsarType.string,
     ),
     r'totalAmount': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'totalAmount',
       type: IsarType.double,
     ),
     r'uuid': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'uuid',
       type: IsarType.string,
     ),
     r'zone': PropertySchema(
-      id: 10,
+      id: 12,
       name: r'zone',
       type: IsarType.string,
     )
@@ -180,14 +190,16 @@ void _ticketSerialize(
     TicketLineSchema.serialize,
     object.lines,
   );
-  writer.writeString(offsets[3], object.parentTicketUuid);
-  writer.writeByte(offsets[4], object.paymentMethod.index);
-  writer.writeByte(offsets[5], object.status.index);
-  writer.writeLong(offsets[6], object.tableNumber);
-  writer.writeString(offsets[7], object.tableOrLabel);
-  writer.writeDouble(offsets[8], object.totalAmount);
-  writer.writeString(offsets[9], object.uuid);
-  writer.writeString(offsets[10], object.zone);
+  writer.writeDouble(offsets[3], object.mixedCardAmount);
+  writer.writeDouble(offsets[4], object.mixedCashAmount);
+  writer.writeString(offsets[5], object.parentTicketUuid);
+  writer.writeByte(offsets[6], object.paymentMethod.index);
+  writer.writeByte(offsets[7], object.status.index);
+  writer.writeLong(offsets[8], object.tableNumber);
+  writer.writeString(offsets[9], object.tableOrLabel);
+  writer.writeDouble(offsets[10], object.totalAmount);
+  writer.writeString(offsets[11], object.uuid);
+  writer.writeString(offsets[12], object.zone);
 }
 
 Ticket _ticketDeserialize(
@@ -207,18 +219,20 @@ Ticket _ticketDeserialize(
         TicketLine(),
       ) ??
       [];
-  object.parentTicketUuid = reader.readStringOrNull(offsets[3]);
+  object.mixedCardAmount = reader.readDouble(offsets[3]);
+  object.mixedCashAmount = reader.readDouble(offsets[4]);
+  object.parentTicketUuid = reader.readStringOrNull(offsets[5]);
   object.paymentMethod =
-      _TicketpaymentMethodValueEnumMap[reader.readByteOrNull(offsets[4])] ??
+      _TicketpaymentMethodValueEnumMap[reader.readByteOrNull(offsets[6])] ??
           PaymentMethod.efectivo;
   object.status =
-      _TicketstatusValueEnumMap[reader.readByteOrNull(offsets[5])] ??
+      _TicketstatusValueEnumMap[reader.readByteOrNull(offsets[7])] ??
           TicketStatus.abierto;
-  object.tableNumber = reader.readLongOrNull(offsets[6]);
-  object.tableOrLabel = reader.readStringOrNull(offsets[7]);
-  object.totalAmount = reader.readDouble(offsets[8]);
-  object.uuid = reader.readString(offsets[9]);
-  object.zone = reader.readStringOrNull(offsets[10]);
+  object.tableNumber = reader.readLongOrNull(offsets[8]);
+  object.tableOrLabel = reader.readStringOrNull(offsets[9]);
+  object.totalAmount = reader.readDouble(offsets[10]);
+  object.uuid = reader.readString(offsets[11]);
+  object.zone = reader.readStringOrNull(offsets[12]);
   return object;
 }
 
@@ -242,22 +256,26 @@ P _ticketDeserializeProp<P>(
           ) ??
           []) as P;
     case 3:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 4:
+      return (reader.readDouble(offset)) as P;
+    case 5:
+      return (reader.readStringOrNull(offset)) as P;
+    case 6:
       return (_TicketpaymentMethodValueEnumMap[reader.readByteOrNull(offset)] ??
           PaymentMethod.efectivo) as P;
-    case 5:
+    case 7:
       return (_TicketstatusValueEnumMap[reader.readByteOrNull(offset)] ??
           TicketStatus.abierto) as P;
-    case 6:
-      return (reader.readLongOrNull(offset)) as P;
-    case 7:
-      return (reader.readStringOrNull(offset)) as P;
     case 8:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 9:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 10:
+      return (reader.readDouble(offset)) as P;
+    case 11:
+      return (reader.readString(offset)) as P;
+    case 12:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -818,6 +836,132 @@ extension TicketQueryFilter on QueryBuilder<Ticket, Ticket, QFilterCondition> {
         upper,
         includeUpper,
       );
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterFilterCondition> mixedCardAmountEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'mixedCardAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterFilterCondition>
+      mixedCardAmountGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'mixedCardAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterFilterCondition> mixedCardAmountLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'mixedCardAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterFilterCondition> mixedCardAmountBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'mixedCardAmount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterFilterCondition> mixedCashAmountEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'mixedCashAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterFilterCondition>
+      mixedCashAmountGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'mixedCashAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterFilterCondition> mixedCashAmountLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'mixedCashAmount',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterFilterCondition> mixedCashAmountBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'mixedCashAmount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
     });
   }
 
@@ -1666,6 +1810,30 @@ extension TicketQuerySortBy on QueryBuilder<Ticket, Ticket, QSortBy> {
     });
   }
 
+  QueryBuilder<Ticket, Ticket, QAfterSortBy> sortByMixedCardAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mixedCardAmount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterSortBy> sortByMixedCardAmountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mixedCardAmount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterSortBy> sortByMixedCashAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mixedCashAmount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterSortBy> sortByMixedCashAmountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mixedCashAmount', Sort.desc);
+    });
+  }
+
   QueryBuilder<Ticket, Ticket, QAfterSortBy> sortByParentTicketUuid() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'parentTicketUuid', Sort.asc);
@@ -1800,6 +1968,30 @@ extension TicketQuerySortThenBy on QueryBuilder<Ticket, Ticket, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Ticket, Ticket, QAfterSortBy> thenByMixedCardAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mixedCardAmount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterSortBy> thenByMixedCardAmountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mixedCardAmount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterSortBy> thenByMixedCashAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mixedCashAmount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QAfterSortBy> thenByMixedCashAmountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mixedCashAmount', Sort.desc);
+    });
+  }
+
   QueryBuilder<Ticket, Ticket, QAfterSortBy> thenByParentTicketUuid() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'parentTicketUuid', Sort.asc);
@@ -1910,6 +2102,18 @@ extension TicketQueryWhereDistinct on QueryBuilder<Ticket, Ticket, QDistinct> {
     });
   }
 
+  QueryBuilder<Ticket, Ticket, QDistinct> distinctByMixedCardAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'mixedCardAmount');
+    });
+  }
+
+  QueryBuilder<Ticket, Ticket, QDistinct> distinctByMixedCashAmount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'mixedCashAmount');
+    });
+  }
+
   QueryBuilder<Ticket, Ticket, QDistinct> distinctByParentTicketUuid(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1986,6 +2190,18 @@ extension TicketQueryProperty on QueryBuilder<Ticket, Ticket, QQueryProperty> {
   QueryBuilder<Ticket, List<TicketLine>, QQueryOperations> linesProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'lines');
+    });
+  }
+
+  QueryBuilder<Ticket, double, QQueryOperations> mixedCardAmountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'mixedCardAmount');
+    });
+  }
+
+  QueryBuilder<Ticket, double, QQueryOperations> mixedCashAmountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'mixedCashAmount');
     });
   }
 

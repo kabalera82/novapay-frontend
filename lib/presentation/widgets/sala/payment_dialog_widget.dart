@@ -10,14 +10,14 @@ import '../common/app_text_field.dart';
 /// No permite pago parcial por líneas.
 class PaymentDialogWidget extends StatefulWidget {
   final double total;
-  final void Function(PaymentMethod method) onConfirm;
+  final void Function(PaymentMethod method, double mixedCash, double mixedCard) onConfirm;
 
   const PaymentDialogWidget({super.key, required this.total, required this.onConfirm});
 
   static Future<void> show(
     BuildContext context, {
     required double total,
-    required void Function(PaymentMethod method) onConfirm,
+    required void Function(PaymentMethod method, double mixedCash, double mixedCard) onConfirm,
   }) {
     return showDialog(
       context: context,
@@ -33,20 +33,25 @@ class PaymentDialogWidget extends StatefulWidget {
 class _PaymentDialogWidgetState extends State<PaymentDialogWidget> {
   final _fmt = AppFormats.currency;
   final _cashCtrl = TextEditingController();
+  final _mixedCashCtrl = TextEditingController();
 
   PaymentMethod _method = PaymentMethod.efectivo;
   double _cashGiven = 0;
+  double _mixedCash = 0;
 
   @override
   void dispose() {
     _cashCtrl.dispose();
+    _mixedCashCtrl.dispose();
     super.dispose();
   }
 
   double get _change => _method == PaymentMethod.efectivo ? (_cashGiven - widget.total).clamp(0, double.infinity) : 0;
+  double get _mixedCard => (widget.total - _mixedCash).clamp(0, widget.total);
 
   bool get _canConfirm {
     if (_method == PaymentMethod.efectivo) return _cashGiven >= widget.total;
+    if (_method == PaymentMethod.mixto) return _mixedCash > 0 && _mixedCash < widget.total;
     return true;
   }
 
@@ -118,7 +123,11 @@ class _PaymentDialogWidgetState extends State<PaymentDialogWidget> {
                   label: 'Mixto',
                   icon: Icons.compare_arrows,
                   selected: _method == PaymentMethod.mixto,
-                  onTap: () => setState(() => _method = PaymentMethod.mixto),
+                  onTap: () => setState(() {
+                    _method = PaymentMethod.mixto;
+                    _mixedCash = 0;
+                    _mixedCashCtrl.clear();
+                  }),
                 ),
               ],
             ),
@@ -153,6 +162,36 @@ class _PaymentDialogWidgetState extends State<PaymentDialogWidget> {
               ),
             ],
 
+            // ── Mixto: Desglose manual ────────────────────────────────────
+            if (_method == PaymentMethod.mixto) ...[
+              const SizedBox(height: 14),
+              AppTextField(
+                controller: _mixedCashCtrl,
+                hintText: 'Parte en Efectivo (€)',
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Efectivo (€)',
+                  prefixIcon: Icon(Icons.payments_outlined),
+                  isDense: true,
+                ),
+                onChanged: (v) => setState(() => _mixedCash = double.tryParse(v.replaceAll(',', '.')) ?? 0),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Resto con Tarjeta', style: theme.textTheme.bodyMedium),
+                  Text(
+                    _fmt.format(_mixedCard),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: theme.colorScheme.secondary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
             const SizedBox(height: 8),
           ],
         ),
@@ -163,7 +202,11 @@ class _PaymentDialogWidgetState extends State<PaymentDialogWidget> {
           onPressed: _canConfirm
               ? () {
                   Navigator.pop(context);
-                  widget.onConfirm(_method);
+                  if (_method == PaymentMethod.mixto) {
+                    widget.onConfirm(_method, _mixedCash, _mixedCard);
+                  } else {
+                    widget.onConfirm(_method, 0, 0);
+                  }
                 }
               : null,
           child: const Text('Cobrar'),

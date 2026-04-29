@@ -104,11 +104,19 @@ class TicketHistoryController extends GetxController {
   /// y cierra el ticket como [pagado]. El ticket NO vuelve a la sala.
   Future<void> rechargeEditing(
     List<int> lineIndices,
-    PaymentMethod method,
-  ) async {
+    PaymentMethod method, {
+    double mixedCashAmount = 0,
+    double mixedCardAmount = 0,
+  }) async {
     if (editingTicket.value == null) return;
     try {
-      await _service.correctPayment(editingTicket.value!, lineIndices, method);
+      await _service.correctPayment(
+        editingTicket.value!,
+        lineIndices,
+        method,
+        mixedCashAmount: mixedCashAmount,
+        mixedCardAmount: mixedCardAmount,
+      );
       editingTicket.value = null;
       await loadAll();
       Get.find<ReportController>().loadLiveStats();

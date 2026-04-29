@@ -516,9 +516,14 @@ class _TicketCorrectionSheetState extends State<_TicketCorrectionSheet> {
     await PaymentDialogWidget.show(
       context,
       total: ticket.totalAmount,
-      onConfirm: (method) async {
+      onConfirm: (method, mixedCash, mixedCard) async {
         final allIndices = List.generate(ticket.lines.length, (i) => i);
-        await _ctrl.rechargeEditing(allIndices, method);
+        await _ctrl.rechargeEditing(
+          allIndices,
+          method,
+          mixedCashAmount: mixedCash,
+          mixedCardAmount: mixedCard,
+        );
         if (mounted) Navigator.of(context).pop();
       },
     );

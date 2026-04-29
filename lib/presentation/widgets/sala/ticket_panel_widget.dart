@@ -517,11 +517,17 @@ class _TicketSidebarState extends State<_TicketSidebar> {
     PaymentDialogWidget.show(
       context,
       total:     _selectedTotal(lines),
-      onConfirm: (method) async {
+      onConfirm: (method, mixedCash, mixedCard) async {
         // Capturar nombres antes de pagar (la lista cambiará)
         final paidNames = [for (final i in indices) lines[i].productName];
 
-        await widget.ticketCtrl.payLines(indices, method, partialQtys: partials);
+        await widget.ticketCtrl.payLines(
+          indices,
+          method,
+          partialQtys: partials,
+          mixedCashAmount: mixedCash,
+          mixedCardAmount: mixedCard,
+        );
 
         if (!mounted) return;
 
