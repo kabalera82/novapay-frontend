@@ -39,7 +39,10 @@ void main() async {
   // Asegura que los bindings de Flutter estén inicializados
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Oculta la barra de estado (arriba) y la barra de navegación/taskbar (abajo)
+  // Configuración de pantalla completa
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+  ));
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   // Fija la orientación en horizontal (Landscape) para que no se gire solo

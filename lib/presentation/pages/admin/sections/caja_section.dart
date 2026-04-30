@@ -50,18 +50,23 @@ class _CajaSectionState extends State<CajaSection> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Cierre de jornada'),
+        title: const Text('Cierre de turno / jornada'),
         content: const Text(
-          'Se generará el reporte del día con todos los tickets pagados. '
-          '¿Continuar?',
+          'Se generará un reporte con las ventas y gastos hasta este momento. '
+          'Podrás seguir trabajando inmediatamente después; los nuevos movimientos contarán para el siguiente cierre.',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Cerrar jornada')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Realizar cierre')),
         ],
       ),
     );
-    if (ok == true) await _reportCtrl.closeDay();
+    if (ok == true) {
+      await _reportCtrl.closeDay();
+      await _reportCtrl.loadLiveStats();
+      await _reportCtrl.loadToday();
+      await _expenseCtrl.loadToday();
+    }
   }
 
   Future<void> _exportToday() async {

@@ -28,9 +28,7 @@ class ExpenseService {
     return _isar.expenses.where().sortByDateDesc().findAll();
   }
 
-  Future<List<Expense>> getByDate(DateTime date) async {
-    final start = DateTime(date.year, date.month, date.day);
-    final end = DateTime(date.year, date.month, date.day, 23, 59, 59);
+  Future<List<Expense>> getByDateRange(DateTime start, DateTime end) async {
     return _isar.expenses
         .filter()
         .dateBetween(start, end)

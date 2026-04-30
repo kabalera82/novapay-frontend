@@ -60,6 +60,7 @@ class _UserShellPageState extends State<UserShellPage> {
         final isExtended = constraints.maxWidth >= 900;
 
         return Scaffold(
+          primary: false,
           appBar: _buildAppBar(context, ctrl),
           drawer: isWide ? null : _buildDrawer(context, ctrl),
           body: isWide
@@ -78,6 +79,7 @@ class _UserShellPageState extends State<UserShellPage> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context, AdminShellController ctrl) {
     return AppBar(
+      primary: false,
       title: Obx(() {
         final idx = ctrl.selectedIndex.value.clamp(0, _navItems.length - 1);
         return Text(_navItems[idx].label);

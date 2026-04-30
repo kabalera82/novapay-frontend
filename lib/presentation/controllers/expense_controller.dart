@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../data/models/expense.dart';
 import '../../services/expense_service.dart';
+import 'report_controller.dart';
 
 class ExpenseController extends GetxController {
   final ExpenseService _service;
@@ -21,9 +22,12 @@ class ExpenseController extends GetxController {
 
   Future<void> loadToday() async {
     try {
-      todayExpenses.value = await _service.getByDate(DateTime.now());
+      final reportCtrl = Get.find<ReportController>();
+      final lastClose = await reportCtrl.getLatestCloseTime();
+      final now = DateTime.now();
+      todayExpenses.value = await _service.getByDateRange(lastClose, now);
     } catch (e) {
-      Get.snackbar('Error', 'No se pudieron cargar los gastos de hoy');
+      Get.snackbar('Error', 'No se pudieron cargar los gastos del turno');
     }
   }
 

@@ -67,6 +67,7 @@ class _AdminShellPageState extends State<AdminShellPage> {
         final isExtended = constraints.maxWidth >= 900;
 
         return Scaffold(
+          primary: false,
           appBar: _buildAppBar(context, ctrl),
           drawer: isWide ? null : _buildDrawer(context, ctrl),
           body: isWide
@@ -87,6 +88,7 @@ class _AdminShellPageState extends State<AdminShellPage> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context, AdminShellController ctrl) {
     return AppBar(
+      primary: false,
       title: Obx(() => Text(_navItems[ctrl.selectedIndex.value].label)),
       actions: [
         IconButton(

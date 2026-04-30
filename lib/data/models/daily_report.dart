@@ -10,6 +10,9 @@ class DailyReport {
   @Index()
   late DateTime date;
 
+  @Index()
+  DateTime? closedAt;
+
   double totalCash      = 0;
   double totalCard      = 0;
   double grandTotal     = 0;

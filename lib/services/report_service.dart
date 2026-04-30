@@ -13,32 +13,21 @@ class ReportService {
   DateTime _endOfDay(DateTime date) => DateTime(date.year, date.month, date.day, 23, 59, 59);
 
   Future<DateTime> _resolveOpenPeriodStart() async {
-    final todayStart = _startOfDay(DateTime.now());
     final lastClose = await getLatestClose();
-    if (lastClose != null) {
-      return _startOfDay(lastClose.date).add(const Duration(days: 1));
+    if (lastClose != null && lastClose.closedAt != null) {
+      return lastClose.closedAt!;
     }
 
-    final paidTickets = await _isar.tickets.filter().statusEqualTo(TicketStatus.pagado).findAll();
-    final expenses = await _isar.expenses.where().findAll();
+    final paidTickets = await _isar.tickets.filter().statusEqualTo(TicketStatus.pagado).sortByCreatedAt().findFirst();
+    final expenses = await _isar.expenses.where().sortByDate().findFirst();
 
     DateTime? earliest;
-
-    for (final ticket in paidTickets) {
-      final day = _startOfDay(ticket.createdAt);
-      if (earliest == null || day.isBefore(earliest)) {
-        earliest = day;
-      }
+    if (paidTickets != null) earliest = paidTickets.createdAt;
+    if (expenses != null && (earliest == null || expenses.date.isBefore(earliest))) {
+      earliest = expenses.date;
     }
 
-    for (final expense in expenses) {
-      final day = _startOfDay(expense.date);
-      if (earliest == null || day.isBefore(earliest)) {
-        earliest = day;
-      }
-    }
-
-    return earliest ?? todayStart;
+    return earliest ?? _startOfDay(DateTime.now());
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -71,56 +60,39 @@ class ReportService {
 
     final summary = productCount.entries.map((e) => '${e.key}:${e.value}').toList();
 
+    // Include expenses
+    final expenses = await _isar.expenses.filter().dateBetween(start, end).findAll();
+    final totalExpenses = expenses.fold(0.0, (sum, e) => sum + e.amount);
+
     return DailyReport()
-      ..date = start
+      ..date = _startOfDay(end == DateTime.now() ? end : start)
       ..totalCash = totalCash
       ..totalCard = totalCard
-      ..grandTotal = totalCash + totalCard
+      ..grandTotal = totalCash + totalCard - totalExpenses
       ..ticketCount = tickets.length
-      ..totalExpenses = 0
+      ..totalExpenses = totalExpenses
       ..soldProductsSummary = summary;
   }
 
   // ── Live stats (no save) ──────────────────────────────────────────────────
 
   Future<DailyReport> getLiveStats() async {
-    final today = DateTime.now();
+    final now = DateTime.now();
     final start = await _resolveOpenPeriodStart();
-    final end = _startOfDay(today).add(const Duration(days: 1));
-    final report = await _buildStats(start, end);
-
-    // Include expenses from the same open period in live stats.
-    final expenses = await _isar.expenses.filter().dateBetween(start, end).findAll();
-    final totalExpenses = expenses.fold(0.0, (sum, e) => sum + e.amount);
-    report.totalExpenses = totalExpenses;
-    report.grandTotal = report.totalCash + report.totalCard - totalExpenses;
-
-    return report;
+    final end = now;
+    return await _buildStats(start, end);
   }
 
   // ── Close day (persists report with real expenses) ────────────────────────
 
   Future<DailyReport> closeDay() async {
-    final today = DateTime.now();
-    final todayStart = _startOfDay(today);
+    final now = DateTime.now();
     final start = await _resolveOpenPeriodStart();
-    final end = todayStart.add(const Duration(days: 1));
+    final end = now;
 
     final report = await _buildStats(start, end);
-
-    // Query actual expenses for today
-    final expenses = await _isar.expenses.filter().dateBetween(start, end).findAll();
-    final totalExpenses = expenses.fold(0.0, (sum, e) => sum + e.amount);
-
-    report
-      ..date = todayStart
-      ..totalExpenses = totalExpenses
-      ..grandTotal = report.totalCash + report.totalCard - totalExpenses;
-
-    final existing = await getByDate(todayStart);
-    if (existing != null) {
-      report.id = existing.id;
-    }
+    report.date = _startOfDay(now);
+    report.closedAt = now;
 
     await _isar.writeTxn(() async {
       await _isar.dailyReports.put(report);
@@ -142,6 +114,15 @@ class ReportService {
   }
 
   Future<DailyReport?> getLatestClose() async {
-    return _isar.dailyReports.where().sortByDateDesc().findFirst();
+    return _isar.dailyReports.where().sortByClosedAtDesc().findFirst();
+  }
+
+  Future<DateTime> getLatestCloseTime() async {
+    final last = await getLatestClose();
+    if (last != null && last.closedAt != null) {
+      return last.closedAt!;
+    }
+    final start = await _resolveOpenPeriodStart();
+    return start;
   }
 }

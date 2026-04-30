@@ -40,7 +40,9 @@ class ReportRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    dateFmt.format(report.date),
+                    report.closedAt != null 
+                      ? '${dateFmt.format(report.date)} - ${DateFormat('HH:mm').format(report.closedAt!)}'
+                      : dateFmt.format(report.date),
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(fontWeight: FontWeight.w600),
                   ),

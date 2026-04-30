@@ -17,38 +17,43 @@ const DailyReportSchema = CollectionSchema(
   name: r'DailyReport',
   id: -3611253067269952573,
   properties: {
-    r'date': PropertySchema(
+    r'closedAt': PropertySchema(
       id: 0,
+      name: r'closedAt',
+      type: IsarType.dateTime,
+    ),
+    r'date': PropertySchema(
+      id: 1,
       name: r'date',
       type: IsarType.dateTime,
     ),
     r'grandTotal': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'grandTotal',
       type: IsarType.double,
     ),
     r'soldProductsSummary': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'soldProductsSummary',
       type: IsarType.stringList,
     ),
     r'ticketCount': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'ticketCount',
       type: IsarType.long,
     ),
     r'totalCard': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'totalCard',
       type: IsarType.double,
     ),
     r'totalCash': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'totalCash',
       type: IsarType.double,
     ),
     r'totalExpenses': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'totalExpenses',
       type: IsarType.double,
     )
@@ -67,6 +72,19 @@ const DailyReportSchema = CollectionSchema(
       properties: [
         IndexPropertySchema(
           name: r'date',
+          type: IndexType.value,
+          caseSensitive: false,
+        )
+      ],
+    ),
+    r'closedAt': IndexSchema(
+      id: 3747962764416151616,
+      name: r'closedAt',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'closedAt',
           type: IndexType.value,
           caseSensitive: false,
         )
@@ -103,13 +121,14 @@ void _dailyReportSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDateTime(offsets[0], object.date);
-  writer.writeDouble(offsets[1], object.grandTotal);
-  writer.writeStringList(offsets[2], object.soldProductsSummary);
-  writer.writeLong(offsets[3], object.ticketCount);
-  writer.writeDouble(offsets[4], object.totalCard);
-  writer.writeDouble(offsets[5], object.totalCash);
-  writer.writeDouble(offsets[6], object.totalExpenses);
+  writer.writeDateTime(offsets[0], object.closedAt);
+  writer.writeDateTime(offsets[1], object.date);
+  writer.writeDouble(offsets[2], object.grandTotal);
+  writer.writeStringList(offsets[3], object.soldProductsSummary);
+  writer.writeLong(offsets[4], object.ticketCount);
+  writer.writeDouble(offsets[5], object.totalCard);
+  writer.writeDouble(offsets[6], object.totalCash);
+  writer.writeDouble(offsets[7], object.totalExpenses);
 }
 
 DailyReport _dailyReportDeserialize(
@@ -119,14 +138,15 @@ DailyReport _dailyReportDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = DailyReport();
-  object.date = reader.readDateTime(offsets[0]);
-  object.grandTotal = reader.readDouble(offsets[1]);
+  object.closedAt = reader.readDateTimeOrNull(offsets[0]);
+  object.date = reader.readDateTime(offsets[1]);
+  object.grandTotal = reader.readDouble(offsets[2]);
   object.id = id;
-  object.soldProductsSummary = reader.readStringList(offsets[2]) ?? [];
-  object.ticketCount = reader.readLong(offsets[3]);
-  object.totalCard = reader.readDouble(offsets[4]);
-  object.totalCash = reader.readDouble(offsets[5]);
-  object.totalExpenses = reader.readDouble(offsets[6]);
+  object.soldProductsSummary = reader.readStringList(offsets[3]) ?? [];
+  object.ticketCount = reader.readLong(offsets[4]);
+  object.totalCard = reader.readDouble(offsets[5]);
+  object.totalCash = reader.readDouble(offsets[6]);
+  object.totalExpenses = reader.readDouble(offsets[7]);
   return object;
 }
 
@@ -138,18 +158,20 @@ P _dailyReportDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 1:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 2:
-      return (reader.readStringList(offset) ?? []) as P;
-    case 3:
-      return (reader.readLong(offset)) as P;
-    case 4:
       return (reader.readDouble(offset)) as P;
+    case 3:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 4:
+      return (reader.readLong(offset)) as P;
     case 5:
       return (reader.readDouble(offset)) as P;
     case 6:
+      return (reader.readDouble(offset)) as P;
+    case 7:
       return (reader.readDouble(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -181,6 +203,14 @@ extension DailyReportQueryWhereSort
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'date'),
+      );
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterWhere> anyClosedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'closedAt'),
       );
     });
   }
@@ -343,10 +373,194 @@ extension DailyReportQueryWhere
       ));
     });
   }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterWhereClause> closedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'closedAt',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterWhereClause>
+      closedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'closedAt',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterWhereClause> closedAtEqualTo(
+      DateTime? closedAt) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'closedAt',
+        value: [closedAt],
+      ));
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterWhereClause> closedAtNotEqualTo(
+      DateTime? closedAt) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'closedAt',
+              lower: [],
+              upper: [closedAt],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'closedAt',
+              lower: [closedAt],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'closedAt',
+              lower: [closedAt],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'closedAt',
+              lower: [],
+              upper: [closedAt],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterWhereClause> closedAtGreaterThan(
+    DateTime? closedAt, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'closedAt',
+        lower: [closedAt],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterWhereClause> closedAtLessThan(
+    DateTime? closedAt, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'closedAt',
+        lower: [],
+        upper: [closedAt],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterWhereClause> closedAtBetween(
+    DateTime? lowerClosedAt,
+    DateTime? upperClosedAt, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'closedAt',
+        lower: [lowerClosedAt],
+        includeLower: includeLower,
+        upper: [upperClosedAt],
+        includeUpper: includeUpper,
+      ));
+    });
+  }
 }
 
 extension DailyReportQueryFilter
     on QueryBuilder<DailyReport, DailyReport, QFilterCondition> {
+  QueryBuilder<DailyReport, DailyReport, QAfterFilterCondition>
+      closedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'closedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterFilterCondition>
+      closedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'closedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterFilterCondition> closedAtEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'closedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterFilterCondition>
+      closedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'closedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterFilterCondition>
+      closedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'closedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterFilterCondition> closedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'closedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<DailyReport, DailyReport, QAfterFilterCondition> dateEqualTo(
       DateTime value) {
     return QueryBuilder.apply(this, (query) {
@@ -1009,6 +1223,18 @@ extension DailyReportQueryLinks
 
 extension DailyReportQuerySortBy
     on QueryBuilder<DailyReport, DailyReport, QSortBy> {
+  QueryBuilder<DailyReport, DailyReport, QAfterSortBy> sortByClosedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'closedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterSortBy> sortByClosedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'closedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<DailyReport, DailyReport, QAfterSortBy> sortByDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'date', Sort.asc);
@@ -1085,6 +1311,18 @@ extension DailyReportQuerySortBy
 
 extension DailyReportQuerySortThenBy
     on QueryBuilder<DailyReport, DailyReport, QSortThenBy> {
+  QueryBuilder<DailyReport, DailyReport, QAfterSortBy> thenByClosedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'closedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DailyReport, DailyReport, QAfterSortBy> thenByClosedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'closedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<DailyReport, DailyReport, QAfterSortBy> thenByDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'date', Sort.asc);
@@ -1173,6 +1411,12 @@ extension DailyReportQuerySortThenBy
 
 extension DailyReportQueryWhereDistinct
     on QueryBuilder<DailyReport, DailyReport, QDistinct> {
+  QueryBuilder<DailyReport, DailyReport, QDistinct> distinctByClosedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'closedAt');
+    });
+  }
+
   QueryBuilder<DailyReport, DailyReport, QDistinct> distinctByDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'date');
@@ -1222,6 +1466,12 @@ extension DailyReportQueryProperty
   QueryBuilder<DailyReport, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<DailyReport, DateTime?, QQueryOperations> closedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'closedAt');
     });
   }
 

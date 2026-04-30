@@ -67,6 +67,10 @@ class ReportController extends GetxController {
     }
   }
 
+  Future<DateTime> getLatestCloseTime() async {
+    return await _service.getLatestCloseTime();
+  }
+
   /// Reloads stats from DB after a new expense is saved.
   Future<void> refreshAfterExpense() async {
     await loadLiveStats();
