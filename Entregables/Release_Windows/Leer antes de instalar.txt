@@ -1,0 +1,24 @@
+===========================================================
+    INSTRUCCIONES DE INSTALACIÓN - NOVAPAY TPV (WINDOWS)
+===========================================================
+
+Para poner en marcha NovaPay TPV en su ordenador de forma correcta, siga estas indicaciones:
+
+1. DESCOMPRESIÓN:
+   - Extraiga el contenido completo del archivo .zip en una carpeta.
+   - UBICACIÓN RECOMENDADA: Se recomienda extraerlo en una ruta sencilla como "C:\NovaPay" o en su "Escritorio" para asegurar que la aplicación tenga todos los permisos necesarios.
+
+2. PRIMER INICIO:
+   - Localice el archivo "NovaPay.exe" y haga doble clic para abrirlo.
+   - Nota sobre la Base de Datos: En el primer arranque, la aplicación generará automáticamente sus archivos de datos (motor Isar). Estos archivos se guardarán de forma segura en su carpeta de "Documentos" de Windows.
+
+3. ACCESO AL SISTEMA:
+   La aplicación viene pre-configurada con un usuario administrador para su primera gestión:
+   - Usuario: Admin
+   - Contraseña: 1234
+
+4. NOTAS IMPORTANTES:
+   - La aplicación es portable; no necesita instalación, pero es fundamental NO mover el archivo .exe fuera de su carpeta, ya que necesita los archivos .dll y la carpeta "data" adjuntos para funcionar.
+   - Si Windows muestra un aviso de "SmartScreen" al ser un ejecutable nuevo, pulse en "Más información" y luego en "Ejecutar de todas formas".
+
+¡Gracias por utilizar NovaPay TPV!

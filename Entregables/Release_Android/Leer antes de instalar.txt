@@ -1,0 +1,25 @@
+===========================================================
+    INSTRUCCIONES DE INSTALACIÓN - NOVAPAY TPV (ANDROID)
+===========================================================
+
+Para instalar la aplicación NovaPay en su dispositivo Android de forma correcta, siga estos pasos:
+
+1. PREPARACIÓN:
+   - Transfiera el archivo .apk a la memoria interna de su dispositivo o descárguelo directamente en él.
+
+2. SEGURIDAD Y PERMISOS (IMPORTANTE):
+   Debido a que esta aplicación se distribuye de forma independiente (fuera de la Google Play Store), Android activará sus sistemas de protección. No se alarme, esto es el comportamiento estándar:
+
+   A) Fuentes Desconocidas: 
+      Si al abrir el archivo aparece un mensaje sobre "Instalar aplicaciones desconocidas", pulse en "Ajustes" y active la casilla "Permitir desde esta fuente".
+
+   B) Google Play Protect:
+      Es posible que aparezca un cuadro bloqueando la instalación diciendo que "El desarrollador es desconocido". 
+      - Pulse en el texto que dice "Más detalles" o en la flecha hacia abajo.
+      - Seleccione la opción "Instalar de todas formas".
+
+3. FINALIZACIÓN:
+   - Una vez concedidos los permisos, pulse en "Instalar".
+   - Al terminar, ya puede abrir NovaPay TPV desde su lista de aplicaciones.
+
+NOTA: Esta aplicación es segura y ha sido generada para esta entrega específica. Las advertencias del sistema son medidas preventivas automáticas de Android para cualquier archivo .apk externo.
