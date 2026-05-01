@@ -1,92 +1,86 @@
-# 💳 NovaPay — Frontend Mobile
+# 💳 NovaPay TPV — Solution
 
-Aplicación móvil multiplataforma desarrollada con **Flutter**. Interfaz de usuario para una plataforma de pagos con reproducción de vídeo, base de datos local y arquitectura limpia.
+![NovaPay Logo](assets/images/novapay.webp)
 
----
-
-## Stack Tecnológico
-
-- **Framework:** Flutter (Dart)
-- **State Management:** GetX
-- **Base de datos local:** Isar
-- **Reproductor de vídeo:** media_kit
-- **Inyección de dependencias:** get_it
-- **Programación funcional:** dartz (Either, Option)
-- **Plataformas:** Android, iOS, Windows, Web, macOS
+NovaPay es una solución de Punto de Venta (TPV) profesional, moderna y multiplataforma desarrollada con **Flutter**. Diseñada para ofrecer una experiencia fluida tanto en dispositivos móviles (Android) como en escritorio (Windows), con un enfoque en el rendimiento offline, estética premium y facilidad de uso.
 
 ---
 
-## Características
+## 🚀 Características Principales
 
-- 📹 Reproducción de vídeo nativo con media_kit
-- 💾 Persistencia local con Isar (NoSQL embebido)
-- 🎯 Inyección de dependencias con get_it
-- ⚡ Estado reactivo con GetX
-- 🧩 Arquitectura limpia con dartz para manejo de errores funcional
-- 🌐 Multiplataforma: móvil, escritorio y web
+- **Gestión de Inventario:** Control total de productos, categorías, stock y precios.
+- **Emisión de Tickets Fiscales:** Generación automática de tickets de venta con trazabilidad fiscal.
+- **Informes Diarios:** Resúmenes de ventas detallados para el cierre de caja.
+- **Control de Gastos:** Registro y gestión de gastos operativos desde la misma interfaz.
+- **Multimedia Experience:** Splash screen dinámico con reproducción de vídeo nativo.
+- **Offline-First:** Funcionamiento garantizado sin conexión gracias a la persistencia local robusta con Isar.
+- **Diseño Moderno:** Interfaz optimizada para pantallas táctiles y uso con ratón, siguiendo estándares de UX actuales.
 
 ---
 
-## Instalación
+## 🛠️ Stack Tecnológico
 
-### Requisitos previos
+- **Frontend:** [Flutter SDK](https://flutter.dev) (Dart)
+- **Estado & Navegación:** [GetX](https://pub.dev/packages/get)
+- **Base de Datos Local:** [Isar Database](https://isar.dev) (NoSQL de alto rendimiento)
+- **Multimedia:** [media_kit](https://pub.dev/packages/media_kit) para reproducción de vídeo nativo.
+- **Inyección de Dependencias:** [GetIt](https://pub.dev/packages/get_it)
+- **Arquitectura:** Clean Architecture con manejo funcional de errores ([Dartz](https://pub.dev/packages/dartz)).
 
+---
+
+## 💻 Instalación y Desarrollo
+
+### Requisitos
 - Flutter SDK >= 3.10.0
 - Dart >= 3.0.0
 
+### Pasos para ejecución local
 ```bash
-# 1. Clonar el repositorio
+# 1. Clonar el proyecto
 git clone https://github.com/kabalera82/novapay-frontend.git
-cd novapay-frontend
 
 # 2. Instalar dependencias
 flutter pub get
 
-# 3. Generar código (Isar)
+# 3. Generar modelos de Isar
 dart run build_runner build --delete-conflicting-outputs
 
-# 4. Ejecutar la app
+# 4. Ejecutar en modo desarrollo
 flutter run
 ```
 
----
-
-## Estructura del Proyecto
-
-```
-lib/
-├── main.dart               # Punto de entrada
-└── (features en desarrollo)
-
-assets/
-├── images/
-│   └── novapay.webp        # Imagen de presentación
-└── videos/
-    └── novapay.mp4         # Vídeo de presentación
-```
-
----
-
-## Dependencias Principales
-
-| Paquete | Versión | Uso |
-|---------|---------|-----|
-| `get` | ^4.6.5 | State management |
-| `get_it` | ^7.6.0 | Inyección de dependencias |
-| `isar` | ^3.1.0 | Base de datos local |
-| `media_kit` | ^1.2.6 | Reproducción de vídeo |
-| `dartz` | ^0.10.0 | Programación funcional |
-| `intl` | ^0.19.0 | Internacionalización |
-
----
-
-## Autor
-
-**kabalera82** — [GitHub](https://github.com/kabalera82)
-
-## arranque limpio
+### Comandos de Utilidad
+Para arrancar la aplicación con una base de datos limpia y semillas de prueba:
+```bash
 flutter run --dart-define=TEST_RESET_ON_START=true
+```
 
+---
 
-## release 
-.\mvnw.cmd clean package -DskipTests
+## 📦 Despliegue (Build)
+
+### Windows
+```bash
+flutter build windows --dart-define=TEST_RESET_ON_START=true
+```
+
+### Android
+```bash
+flutter build apk --release --dart-define=TEST_RESET_ON_START=true
+```
+
+---
+
+## 👥 Autores
+
+Este proyecto ha sido desarrollado por:
+
+* **Aaron Gómez** — [GitHub](https://github.com/aaronsgomez)
+* **kabalera82** — [GitHub](https://github.com/kabalera82)
+
+---
+
+## 📄 Licencia
+
+Este proyecto es de uso privado para la plataforma NovaPay. Todos los derechos reservados.
